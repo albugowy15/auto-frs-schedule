@@ -1,11 +1,26 @@
 use calamine::{open_workbook, Error, Reader, Xlsx};
+use dotenv::dotenv;
+use std::env;
 
-fn main() {
+use crate::db::db::{get_all_subject_id, start_connection};
+pub mod db;
+
+#[tokio::main]
+async fn main() {
     println!("Hello, world!");
-    match example() {
+    dotenv().ok();
+
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    print!("Connecting to {}...", db_url);
+    let mut conn = start_connection(db_url).await.unwrap();
+    match get_all_subject_id(&mut conn).await {
         Ok(_) => println!("success"),
         Err(e) => println!("error: {}", e),
-    };
+    }
+    // match example() {
+    //     Ok(_) => println!("success"),
+    //     Err(e) => println!("error: {}", e),
+    // };
 }
 
 /*

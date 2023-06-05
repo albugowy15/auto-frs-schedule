@@ -1,0 +1,1 @@
+struct mock_data {}
