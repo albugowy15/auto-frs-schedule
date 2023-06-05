@@ -1,9 +1,10 @@
-use calamine::{open_workbook, Error, Reader, Xlsx};
+use auto_frs_schedule::{
+    db::{start_connection, SQLData},
+    excel::parse_excel,
+};
 use dotenv::dotenv;
-use std::env;
 
-use crate::db::db::{get_all_subject_id, start_connection};
-pub mod db;
+use std::env;
 
 #[tokio::main]
 async fn main() {
@@ -12,57 +13,49 @@ async fn main() {
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     print!("Connecting to {}...", db_url);
-    let mut conn = start_connection(db_url).await.unwrap();
-    match get_all_subject_id(&mut conn).await {
-        Ok(_) => println!("success"),
-        Err(e) => println!("error: {}", e),
-    }
-    // match example() {
-    //     Ok(_) => println!("success"),
-    //     Err(e) => println!("error: {}", e),
-    // };
-}
-
-/*
-Data :
-Matkul -> Matkul id
-Lecture -> Lecture id
-day
-code
-is Akses -> set false
-taken -> set 0
-session -> session Id
- */
-
-fn example() -> Result<(), Error> {
-    let path = format!(
-        "{}/assets/Jadwal Kuliah Genap 22-23 T.Informatika ITS.xlsx",
-        env!("CARGO_MANIFEST_DIR")
-    );
-    let mut excel: Xlsx<_> = open_workbook(path).unwrap();
-    if let Some(Ok(r)) = excel.worksheet_range("Jadwal Kuliah") {
-        for (j, row) in r.rows().enumerate() {
-            for (i, c) in row.iter().enumerate() {
-                if let Some(val) = c.get_string() {
-                    if val.starts_with("Struktur Data") {
-                        println!("Matkul {}", val);
-                        let ruang = match r.get_value((0, i as u32)) {
-                            Some(val) => val.get_string().unwrap(),
-                            None => "",
-                        };
-                        let jam = match r.get_value((j as u32, 1)) {
-                            Some(val) => match val.get_string() {
-                                Some(val) => val,
-                                None => "",
-                            },
-                            None => "",
-                        };
-                        println!("Ruang: {}, Jam: {}", ruang.to_string(), jam);
-                    }
-                }
-            }
+    let pool = match start_connection(db_url).await {
+        Ok(conn) => {
+            println!("success");
+            conn
         }
-    }
+        Err(e) => {
+            println!("error: {}", e);
+            return;
+        }
+    };
+    let mut conn = pool.get_conn().await.unwrap();
 
-    Ok(())
+    // retrieve data from database
+    let mut sql_data = SQLData::new();
+    match sql_data.get_all_subject(&mut conn).await {
+        Ok(_) => println!("success get all subject"),
+        Err(e) => {
+            println!("error get all subject : {}", e);
+            return;
+        }
+    };
+    match sql_data.get_all_lecture(&mut conn).await {
+        Ok(_) => println!("success get all lecture"),
+        Err(e) => {
+            println!("error get all lecture : {}", e);
+            return;
+        }
+    };
+    match sql_data.get_all_session(&mut conn).await {
+        Ok(_) => println!("success get all session"),
+        Err(e) => {
+            println!("error get all session : {}", e);
+            return;
+        }
+    };
+    drop(conn);
+    pool.disconnect().await.unwrap();
+
+    // println!("sql session : {:?}", sql_data.session);
+    // println!("sql subject : {:?}", sql_data.subject);
+    // println!("sql lecturer : {:?}", sql_data.lecturer);
+
+    parse_excel(&sql_data.subject, &sql_data.lecturer, &sql_data.session).unwrap();
+
+    // retrive data from excel
 }
