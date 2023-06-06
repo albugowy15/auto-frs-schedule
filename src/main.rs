@@ -19,8 +19,7 @@ async fn main() {
             conn
         }
         Err(e) => {
-            println!("error: {}", e);
-            return;
+            panic!("error: {}", e);
         }
     };
     let mut conn = pool.get_conn().await.unwrap();
@@ -30,32 +29,36 @@ async fn main() {
     match sql_data.get_all_subject(&mut conn).await {
         Ok(_) => println!("success get all subject"),
         Err(e) => {
-            println!("error get all subject : {}", e);
-            return;
+            panic!("error get all subject : {}", e);
         }
     };
     match sql_data.get_all_lecture(&mut conn).await {
         Ok(_) => println!("success get all lecture"),
         Err(e) => {
-            println!("error get all lecture : {}", e);
-            return;
+            panic!("error get all lecture : {}", e);
         }
     };
     match sql_data.get_all_session(&mut conn).await {
         Ok(_) => println!("success get all session"),
         Err(e) => {
-            println!("error get all session : {}", e);
-            return;
+            panic!("error get all session : {}", e);
         }
     };
+
+    let list_class = parse_excel(&sql_data.subject, &sql_data.lecturer, &sql_data.session).unwrap();
+    match sql_data.drop_class_table(&mut conn).await {
+        Ok(_) => println!("successfully drop table"),
+        Err(e) => {
+            panic!("error drop table : {}", e);
+        }
+    };
+    match sql_data.insert_data(&mut conn, list_class).await {
+        Ok(_) => println!("successfully insert data"),
+        Err(e) => {
+            panic!("error insert data : {}", e);
+        }
+    };
+
     drop(conn);
     pool.disconnect().await.unwrap();
-
-    // println!("sql session : {:?}", sql_data.session);
-    // println!("sql subject : {:?}", sql_data.subject);
-    // println!("sql lecturer : {:?}", sql_data.lecturer);
-
-    parse_excel(&sql_data.subject, &sql_data.lecturer, &sql_data.session).unwrap();
-
-    // retrive data from excel
 }
