@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use mysql_async::{
     prelude::{Query, Queryable, WithParams},
-    Conn, Error, Pool,
+    Conn, Error,
 };
 
 use crate::excel::Class;
@@ -49,7 +49,6 @@ impl SQLData {
 
         Ok(())
     }
-
     pub async fn get_all_lecture(&mut self, conn: &mut Conn) -> Result<(), Error> {
         let loaded_lecture = "SELECT id, code FROM Lecturer"
             .with(())
@@ -62,7 +61,6 @@ impl SQLData {
 
         Ok(())
     }
-
     pub async fn get_all_session(&mut self, conn: &mut Conn) -> Result<(), Error> {
         let loaded_session = "SELECT id, session_time FROM Session"
             .with(())
@@ -76,48 +74,38 @@ impl SQLData {
 
         Ok(())
     }
-
-    pub async fn drop_class_table(&mut self, conn: &mut Conn) -> Result<(), Error> {
-        conn.query_drop("DELETE FROM Class").await
-    }
-
-    #[allow(deprecated)]
-    pub async fn insert_data(&mut self, conn: &mut Conn, data: Vec<Class>) -> Result<(), Error> {
-        let prepared_stmt = conn.prep("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").await?;
-        for item in data.iter() {
-            let id_class = cuid::cuid().unwrap();
-            println!(
-                "Inserting : {}, {}, {}, {}, {}, {}, {}, {}",
-                id_class,
-                item.matkul_id,
-                item.lecture_id,
-                item.day,
-                item.code,
-                false,
-                0,
-                item.session_id
-            );
-            let values = (
-                id_class.to_string(),
-                &item.matkul_id,
-                &item.lecture_id,
-                &item.day,
-                &item.code,
-                false,
-                0,
-                &item.session_id,
-            );
-            conn.exec_drop(&prepared_stmt, values).await?;
-        }
-        Ok(())
-    }
 }
 
-pub async fn start_connection(database_url: String) -> Result<Pool, Error> {
-    let builder =
-        mysql_async::OptsBuilder::from_opts(mysql_async::Opts::from_url(&database_url).unwrap());
-
-    return Ok(mysql_async::Pool::new(
-        builder.ssl_opts(mysql_async::SslOpts::default()),
-    ));
+pub async fn drop_class_table(conn: &mut Conn) -> Result<(), Error> {
+    conn.query_drop("DELETE FROM Class").await
+}
+#[allow(deprecated)]
+pub async fn insert_data(conn: &mut Conn, data: Vec<Class>) -> Result<(), Error> {
+    let prepared_stmt = conn.prep("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").await?;
+    for item in data.iter() {
+        let id_class = cuid::cuid().unwrap();
+        println!(
+            "Inserting : {}, {}, {}, {}, {}, {}, {}, {}",
+            id_class,
+            item.matkul_id,
+            item.lecture_id,
+            item.day,
+            item.code,
+            false,
+            0,
+            item.session_id
+        );
+        let values = (
+            id_class.to_string(),
+            &item.matkul_id,
+            &item.lecture_id,
+            &item.day,
+            &item.code,
+            false,
+            0,
+            &item.session_id,
+        );
+        conn.exec_drop(&prepared_stmt, values).await?;
+    }
+    Ok(())
 }

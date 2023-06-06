@@ -1,27 +1,20 @@
 use auto_frs_schedule::{
-    db::{start_connection, SQLData},
+    db::{drop_class_table, insert_data, SQLData},
     excel::parse_excel,
 };
 use dotenv::dotenv;
-
 use std::env;
 
 #[tokio::main]
 async fn main() {
-    println!("Hello, world!");
     dotenv().ok();
-
+    // start db connection
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    print!("Connecting to {}...", db_url);
-    let pool = match start_connection(db_url).await {
-        Ok(conn) => {
-            println!("success");
-            conn
-        }
-        Err(e) => {
-            panic!("error: {}", e);
-        }
-    };
+    println!("Connecting to {}...", db_url);
+    let builder =
+        mysql_async::OptsBuilder::from_opts(mysql_async::Opts::from_url(&db_url).unwrap());
+
+    let pool = mysql_async::Pool::new(builder.ssl_opts(mysql_async::SslOpts::default()));
     let mut conn = pool.get_conn().await.unwrap();
 
     // retrieve data from database
@@ -45,14 +38,17 @@ async fn main() {
         }
     };
 
+    // parse excel
     let list_class = parse_excel(&sql_data.subject, &sql_data.lecturer, &sql_data.session).unwrap();
-    match sql_data.drop_class_table(&mut conn).await {
+
+    // insert data to database
+    match drop_class_table(&mut conn).await {
         Ok(_) => println!("successfully drop table"),
         Err(e) => {
             panic!("error drop table : {}", e);
         }
     };
-    match sql_data.insert_data(&mut conn, list_class).await {
+    match insert_data(&mut conn, list_class).await {
         Ok(_) => println!("successfully insert data"),
         Err(e) => {
             panic!("error insert data : {}", e);
