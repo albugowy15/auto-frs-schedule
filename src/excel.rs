@@ -13,21 +13,21 @@ session -> session Id
 use calamine::{open_workbook, Error, Reader, Xlsx};
 
 #[allow(dead_code)]
-struct Class {
-    matkul_id: String,
-    lecture_id: String,
-    day: String,
-    code: String,
-    is_akses: bool,
-    taken: u32,
-    session_id: u32,
+pub struct Class {
+    pub matkul_id: String,
+    pub lecture_id: String,
+    pub day: String,
+    pub code: String,
+    pub is_akses: bool,
+    pub taken: u32,
+    pub session_id: u32,
 }
 
 pub fn parse_excel(
     list_subject: &HashMap<String, String>,
     list_lecture: &HashMap<String, String>,
     list_session: &HashMap<String, u32>,
-) -> Result<(), Error> {
+) -> Result<Vec<Class>, Error> {
     let path = format!(
         "{}/assets/Jadwal Kuliah Genap 22-23 T.Informatika ITS.xlsx",
         env!("CARGO_MANIFEST_DIR")
@@ -62,18 +62,13 @@ pub fn parse_excel(
                         }
                     };
 
-                    let day = if row_idx < 15 {
-                        "Senin"
-                    } else if row_idx < 29 {
-                        "Selasa"
-                    } else if row_idx < 43 {
-                        "Rabu"
-                    } else if row_idx < 57 {
-                        "Kamis"
-                    } else {
-                        "Jum'at"
+                    let day = match row_idx {
+                        0..=14 => "Senin",
+                        15..=28 => "Selasa",
+                        29..=42 => "Rabu",
+                        43..=56 => "Kamis",
+                        _ => "Jum'at",
                     };
-
                     // get code
                     let class_code = subject_name[1];
 
@@ -112,5 +107,5 @@ pub fn parse_excel(
     }
     println!("len class = {}", list_class.len());
 
-    Ok(())
+    Ok(list_class)
 }
