@@ -25,16 +25,35 @@ pub fn parse_excel(
     let mut list_class: Vec<Class> = Vec::new();
     for (row_idx, row) in range.rows().enumerate() {
         for (col_idx, c) in row.iter().enumerate() {
-            if c.get_string().is_none() {
+            let val = match c.get_string() {
+                Some(val) => val,
+                None => {
+                    continue;
+                }
+            };
+            let subject_name = val.split("-").collect::<Vec<&str>>();
+            if subject_name.len() < 2 {
                 continue;
             }
-            let val = c.get_string().unwrap();
-            let subject_name = val.split(" - ").collect::<Vec<&str>>();
-            if !list_subject.contains_key(subject_name[0]) {
-                continue;
+            let (subject_valid, class_code) =
+                if subject_name[0].contains("IUP") && subject_name[1].contains("akselerasi") {
+                    //get fixed subject_name
+                    let fixed_subject_name =
+                        subject_name[0].split("IUP").collect::<Vec<&str>>()[0].trim();
+                    //get fixed class code
+                    let fixed_class_code = "IUP akselerasi";
+                    (fixed_subject_name, fixed_class_code)
+                } else {
+                    let fixed_subject_name = subject_name[0].trim();
+                    let fixed_class_code = subject_name[1].trim();
+                    (fixed_subject_name, fixed_class_code)
+                };
+            let subject_id = match list_subject.get(subject_valid) {
+                Some(val) => val,
+                None => {
+                    continue;
+                }
             };
-            let subject_id = list_subject.get(subject_name[0]).unwrap();
-            let class_code = subject_name[1];
             let lecture_code = range
                 .get_value((row_idx as u32 + 1, col_idx as u32))
                 .unwrap()
@@ -42,14 +61,20 @@ pub fn parse_excel(
                 .unwrap()
                 .split("/")
                 .collect::<Vec<&str>>()[2];
-            if lecture_code.len() != 2 {
+            let lecturer = if lecture_code.len() > 2 {
+                let team_lecturer: Vec<&str> = lecture_code.split("-").collect();
+                team_lecturer[0].trim()
+            } else {
+                lecture_code
+            };
+            if lecturer.len() > 2 {
+                println!("Not valid lecture code : {} {}", lecture_code, lecturer);
                 continue;
             }
-            let lecture_id = match list_lecture.get(lecture_code) {
+            let lecture_id = match list_lecture.get(lecturer) {
                 Some(val) => val,
                 None => {
-                    println!("No lecture id for {}", lecture_code);
-                    continue;
+                    panic!("No lecture id for {}", lecture_code);
                 }
             };
             let day = match row_idx {
