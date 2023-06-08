@@ -1,113 +1,143 @@
-use calamine::{open_workbook, Error, Reader, Xlsx};
+use crate::Class;
+use calamine::{open_workbook, DataType, Error, Range, Reader, Xlsx};
 use std::collections::HashMap;
 
-pub struct Class {
-    pub matkul_id: String,
-    pub lecture_id: String,
-    pub day: String,
-    pub code: String,
-    pub is_akses: bool,
-    pub taken: u32,
-    pub session_id: u32,
+pub struct Excel {
+    range: Range<DataType>,
 }
 
-pub fn parse_excel(
-    list_subject: &HashMap<String, String>,
-    list_lecture: &HashMap<String, String>,
-    list_session: &HashMap<String, u32>,
-) -> Result<Vec<Class>, Error> {
-    let path = format!(
-        "{}/assets/Jadwal Kuliah Genap 22-23 T.Informatika ITS.xlsx",
-        env!("CARGO_MANIFEST_DIR")
-    );
-    let mut excel: Xlsx<_> = open_workbook(path).unwrap();
-    let range = excel.worksheet_range("Jadwal Kuliah").unwrap()?;
-    let mut list_class: Vec<Class> = Vec::new();
-    for (row_idx, row) in range.rows().enumerate() {
-        for (col_idx, c) in row.iter().enumerate() {
-            let val = match c.get_string() {
-                Some(val) => val,
-                None => {
-                    continue;
-                }
-            };
-            let subject_name = val.split("-").collect::<Vec<&str>>();
-            if subject_name.len() < 2 {
-                continue;
-            }
-            let (subject_valid, class_code) =
-                if subject_name[0].contains("IUP") && subject_name[1].contains("akselerasi") {
-                    //get fixed subject_name
-                    let fixed_subject_name =
-                        subject_name[0].split("IUP").collect::<Vec<&str>>()[0].trim();
-                    //get fixed class code
-                    let fixed_class_code = "IUP akselerasi";
-                    (fixed_subject_name, fixed_class_code)
-                } else {
-                    let fixed_subject_name = subject_name[0].trim();
-                    let fixed_class_code = subject_name[1].trim();
-                    (fixed_subject_name, fixed_class_code)
-                };
-            let subject_id = match list_subject.get(subject_valid) {
-                Some(val) => val,
-                None => {
-                    continue;
-                }
-            };
-            let lecture_code = range
-                .get_value((row_idx as u32 + 1, col_idx as u32))
-                .unwrap()
-                .get_string()
-                .unwrap()
-                .split("/")
-                .collect::<Vec<&str>>()[2];
-            let lecturer = if lecture_code.len() > 2 {
-                let team_lecturer: Vec<&str> = lecture_code.split("-").collect();
-                team_lecturer[0].trim()
-            } else {
-                lecture_code
-            };
-            if lecturer.len() > 2 {
-                println!("Not valid lecture code : {} {}", lecture_code, lecturer);
-                continue;
-            }
-            let lecture_id = match list_lecture.get(lecturer) {
-                Some(val) => val,
-                None => {
-                    panic!("No lecture id for {}", lecture_code);
-                }
-            };
-            let day = match row_idx {
-                0..=14 => "Senin",
-                15..=28 => "Selasa",
-                29..=42 => "Rabu",
-                43..=56 => "Kamis",
-                _ => "Jum'at",
-            };
-            let session_name = range
-                .get_value((row_idx as u32, 1))
-                .unwrap()
-                .get_string()
-                .unwrap()
-                .split(" - ")
-                .collect::<Vec<&str>>()[0];
-            let session_id = match list_session.get(session_name) {
-                Some(val) => val,
-                None => {
-                    println!("No session id for : {}", session_name);
-                    continue;
-                }
-            };
-            list_class.push(Class {
-                matkul_id: subject_id.to_string(),
-                lecture_id: lecture_id.to_string(),
-                day: day.to_string(),
-                code: class_code.to_string(),
-                is_akses: false,
-                taken: 0,
-                session_id: *session_id,
-            });
-        }
+impl Excel {
+    pub fn new(file_path: &String, sheet_name: &String) -> Result<Self, Error> {
+        let mut excel: Xlsx<_> = open_workbook(file_path)?;
+        let range = excel.worksheet_range(sheet_name).unwrap()?;
+        Ok(Self { range })
     }
-    Ok(list_class)
+    fn get_subject_id_class(
+        val: &&str,
+        subject_map: &HashMap<String, String>,
+    ) -> Option<(String, String)> {
+        let subject_name = val.split("-").collect::<Vec<&str>>();
+        if subject_name.len() < 2 {
+            return None;
+        }
+        let (subject_valid, class_code) =
+            if subject_name[0].contains("IUP") && subject_name[1].contains("akselerasi") {
+                (
+                    subject_name[0].split("IUP").collect::<Vec<&str>>()[0].trim(),
+                    "IUP akselerasi",
+                )
+            } else {
+                (subject_name[0].trim(), subject_name[1].trim())
+            };
+        let subject_id = match subject_map.get(subject_valid) {
+            Some(val) => val,
+            None => {
+                return None;
+            }
+        };
+        Some((subject_id.to_string(), class_code.to_string()))
+    }
+    fn get_lecturer_id(
+        &self,
+        row: u32,
+        col: u32,
+        lecturer_map: &HashMap<String, String>,
+    ) -> Option<String> {
+        let lecturer = self
+            .range
+            .get_value((row + 1, col))
+            .unwrap()
+            .get_string()
+            .unwrap()
+            .split("/")
+            .collect::<Vec<&str>>()[2];
+        let lecturer_code = if lecturer.len() > 2 {
+            lecturer.split("-").collect::<Vec<&str>>()[0].trim()
+        } else {
+            lecturer
+        };
+        if lecturer.len() > 2 {
+            println!("Not valid lecture code : {} {}", lecturer, lecturer_code);
+            return None;
+        }
+        let lecture_id = match lecturer_map.get(lecturer_code) {
+            Some(val) => val,
+            None => {
+                println!("No lecture id for : {}", lecturer_code);
+                return None;
+            }
+        };
+        Some(lecture_id.to_string())
+    }
+    fn get_session_id(&self, row_idx: u32, session_map: &HashMap<String, u32>) -> Option<u32> {
+        let session_name = self
+            .range
+            .get_value((row_idx, 1))
+            .unwrap()
+            .get_string()
+            .unwrap()
+            .split(" - ")
+            .collect::<Vec<&str>>()[0];
+        let session_id = match session_map.get(session_name) {
+            Some(val) => *val,
+            None => {
+                println!("No session id for : {}", session_name);
+                return None;
+            }
+        };
+        Some(session_id)
+    }
+    pub fn parse_excel(
+        &self,
+        list_subject: &HashMap<String, String>,
+        list_lecture: &HashMap<String, String>,
+        list_session: &HashMap<String, u32>,
+    ) -> Result<Vec<Class>, Error> {
+        let mut list_class: Vec<Class> = Vec::new();
+        for (row_idx, row) in self.range.rows().enumerate() {
+            for (col_idx, c) in row.iter().enumerate() {
+                let val = match c.get_string() {
+                    Some(val) => val,
+                    None => {
+                        continue;
+                    }
+                };
+                let (subject_id, class_code) = match Self::get_subject_id_class(&val, &list_subject)
+                {
+                    Some(val) => val,
+                    None => {
+                        continue;
+                    }
+                };
+                let lecturer_id =
+                    match self.get_lecturer_id(row_idx as u32, col_idx as u32, &list_lecture) {
+                        Some(val) => val,
+                        None => {
+                            continue;
+                        }
+                    };
+                let day = match row_idx {
+                    0..=14 => "Senin",
+                    15..=28 => "Selasa",
+                    29..=42 => "Rabu",
+                    43..=56 => "Kamis",
+                    _ => "Jum'at",
+                };
+                let session_id = match self.get_session_id(row_idx as u32, &list_session) {
+                    Some(val) => val,
+                    None => {
+                        continue;
+                    }
+                };
+                list_class.push(Class {
+                    matkul_id: subject_id.to_string(),
+                    lecture_id: lecturer_id.to_string(),
+                    day: day.to_string(),
+                    code: class_code.to_string(),
+                    session_id,
+                });
+            }
+        }
+        Ok(list_class)
+    }
 }

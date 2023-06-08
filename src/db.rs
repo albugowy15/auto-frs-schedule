@@ -1,27 +1,10 @@
-use std::collections::HashMap;
-
+use crate::{Class, Lecturer, Session, Subject};
+use cuid;
 use mysql_async::{
     prelude::{Query, Queryable, WithParams},
     Conn, Error,
 };
-
-use crate::excel::Class;
-use cuid;
-
-struct Subject {
-    id: String,
-    name: String,
-}
-
-struct Lecturer {
-    id: String,
-    code: String,
-}
-
-struct Session {
-    id: u32,
-    session_time: String,
-}
+use std::collections::HashMap;
 
 pub struct SQLData {
     pub subject: HashMap<String, String>,
@@ -76,7 +59,9 @@ impl SQLData {
     }
 }
 
-pub async fn drop_class_table(conn: &mut Conn) -> Result<(), Error> {
+pub async fn drop_old_data(conn: &mut Conn) -> Result<(), Error> {
+    conn.query_drop("DELETE FROM Plan").await?;
+    conn.query_drop("DELETE FROM _ClassToPlan").await?;
     conn.query_drop("DELETE FROM Class").await
 }
 #[allow(deprecated)]
