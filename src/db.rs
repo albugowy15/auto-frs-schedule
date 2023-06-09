@@ -59,6 +59,15 @@ impl SQLData {
     }
 }
 
+pub async fn start_db_connection(
+    db_url: &str,
+) -> Result<(mysql_async::Conn, mysql_async::Pool), Error> {
+    println!("\nStart db connection");
+    let builder = mysql_async::OptsBuilder::from_opts(mysql_async::Opts::from_url(&db_url)?);
+    let pool = mysql_async::Pool::new(builder.ssl_opts(mysql_async::SslOpts::default()));
+    let conn = pool.get_conn().await?;
+    Ok((conn, pool))
+}
 pub async fn drop_old_data(conn: &mut Conn) -> Result<(), Error> {
     conn.query_drop("DELETE FROM Plan").await?;
     conn.query_drop("DELETE FROM _ClassToPlan").await?;

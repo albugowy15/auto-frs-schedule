@@ -56,10 +56,6 @@ impl Excel {
         } else {
             lecturer
         };
-        if lecturer.len() > 2 {
-            println!("Not valid lecture code : {} {}", lecturer, lecturer_code);
-            return None;
-        }
         let lecture_id = match lecturer_map.get(lecturer_code) {
             Some(val) => val,
             None => {

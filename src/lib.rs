@@ -1,6 +1,7 @@
 pub mod db;
 pub mod excel;
 
+#[derive(Debug)]
 pub struct Class {
     matkul_id: String,
     lecture_id: String,
