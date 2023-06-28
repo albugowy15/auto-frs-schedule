@@ -1,7 +1,7 @@
 use auto_frs_schedule::{
-    db::{drop_old_data, insert_data, start_db_connection, SQLData},
+    db::Connection,
     excel::Excel,
-    Class,
+    repo::{Class, ClassRepository},
 };
 use clap::{Parser, Subcommand};
 use dotenv::dotenv;
@@ -35,125 +35,68 @@ enum Commands {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let cli = Cli::parse();
+    let mut db = Connection::create_connection(&db_url).await?;
 
     match &cli.command {
         Some(Commands::ExcelToDB { file, sheet }) => {
-            // start db connection
             let path_to_excel = match file {
                 Some(path) => path.to_str().unwrap().to_string(),
                 None => {
                     panic!("Error file path not found");
                 }
             };
-            let (mut conn, pool) = match start_db_connection(&db_url).await {
-                Ok((conn, pool)) => (conn, pool),
-                Err(e) => {
-                    panic!("Error start db connection : {}", e);
-                }
-            };
             // retrieve data from database
             println!("\nStart retrieve data from database");
-            let mut sql_data = SQLData::new();
-            match sql_data.get_all_subject(&mut conn).await {
-                Ok(_) => println!("Success get all subject"),
-                Err(e) => {
-                    panic!("Error get all subject : {}", e);
-                }
-            };
-            match sql_data.get_all_lecture(&mut conn).await {
-                Ok(_) => println!("Success get all lecture"),
-                Err(e) => {
-                    panic!("Error get all lecture : {}", e);
-                }
-            };
-            match sql_data.get_all_session(&mut conn).await {
-                Ok(_) => println!("Success get all session"),
-                Err(e) => {
-                    panic!("Error get all session : {}", e);
-                }
-            };
+            let mut class_repo = ClassRepository::new();
+            class_repo.get_all_subject(&mut db.conn).await?;
+            class_repo.get_all_lecture(&mut db.conn).await?;
+            class_repo.get_all_session(&mut db.conn).await?;
             // parse excel
-            let list_class = parse_excel(&path_to_excel, &sheet, &sql_data);
+            let list_class = parse_excel(&path_to_excel, &sheet, &class_repo);
             println!("\nStart insert classes to database");
             // insert data to database
-            match drop_old_data(&mut conn).await {
-                Ok(_) => println!("Successfully delete old classes"),
-                Err(e) => {
-                    panic!("Error delete old classes : {}", e);
-                }
-            };
-            match insert_data(&mut conn, list_class).await {
-                Ok(_) => println!("Successfully insert classes"),
-                Err(e) => {
-                    panic!("Error insert classes : {}", e);
-                }
-            };
-            drop(conn);
-            pool.disconnect().await.unwrap();
+            class_repo.insert_data(&mut db.conn, list_class).await?;
         }
         Some(Commands::ParseExcel {
             file,
             sheet,
             outdir,
         }) => {
-            // start db connection
-            println!("\nStart db connection");
             let path_to_excel = match file {
                 Some(path) => path.to_str().unwrap().to_string(),
                 None => {
                     panic!("Error file path not found");
                 }
             };
-            let (mut conn, pool) = match start_db_connection(&db_url).await {
-                Ok((conn, pool)) => (conn, pool),
-                Err(e) => {
-                    panic!("Error start db connection : {}", e);
-                }
-            };
             // retrieve data from database
             println!("\nStart retrieve data from database");
-            let mut sql_data = SQLData::new();
-            match sql_data.get_all_subject(&mut conn).await {
-                Ok(_) => println!("Success get all subject"),
-                Err(e) => {
-                    panic!("Error get all subject : {}", e);
-                }
-            };
-            match sql_data.get_all_lecture(&mut conn).await {
-                Ok(_) => println!("Success get all lecture"),
-                Err(e) => {
-                    panic!("Error get all lecture : {}", e);
-                }
-            };
-            match sql_data.get_all_session(&mut conn).await {
-                Ok(_) => println!("Success get all session"),
-                Err(e) => {
-                    panic!("Error get all session : {}", e);
-                }
-            };
-            drop(conn);
-            pool.disconnect().await.unwrap();
+            let mut class_repo = ClassRepository::new();
+            class_repo.get_all_subject(&mut db.conn).await?;
+            class_repo.get_all_lecture(&mut db.conn).await?;
+            class_repo.get_all_session(&mut db.conn).await?;
             // parse excel
-            let list_class = parse_excel(&path_to_excel, &sheet, &sql_data);
+            let list_class = parse_excel(&path_to_excel, &sheet, &class_repo);
             let path_output = match outdir {
                 Some(path) => path.to_str().unwrap().to_string(),
                 None => {
                     panic!("Error output path not found")
                 }
             };
-            write_output(&path_output, &list_class).await;
+            write_output(&path_output, &list_class).await?;
         }
         None => {
             println!("no command");
         }
     }
+    db.close_connection().await?;
+    Ok(())
 }
 
-fn parse_excel(path_to_excel: &String, sheet: &String, sql_data: &SQLData) -> Vec<Class> {
+fn parse_excel(path_to_excel: &String, sheet: &String, sql_data: &ClassRepository) -> Vec<Class> {
     // parse excel
     println!("\nStart parse excel");
     let excel = match Excel::new(&path_to_excel, &sheet) {
@@ -166,7 +109,7 @@ fn parse_excel(path_to_excel: &String, sheet: &String, sql_data: &SQLData) -> Ve
         }
     };
     let list_class =
-        match excel.parse_excel(&sql_data.subject, &sql_data.lecturer, &sql_data.session) {
+        match excel.parse_excel(&sql_data.subjects, &sql_data.lecturers, &sql_data.sessions) {
             Ok(list_class) => {
                 println!("Succesfully parse {} classes", list_class.len());
                 list_class
@@ -178,19 +121,19 @@ fn parse_excel(path_to_excel: &String, sheet: &String, sql_data: &SQLData) -> Ve
     list_class
 }
 
-async fn write_output(path_output: &String, list_class: &Vec<Class>) {
-    let mut outfile = match File::create(format!("{}/out.txt", path_output)).await {
-        Ok(file) => {
-            println!("Success create file");
-            file
-        }
-        Err(e) => {
-            panic!("Error create file : {}", e);
-        }
-    };
+#[allow(deprecated)]
+async fn write_output(
+    path_output: &String,
+    list_class: &Vec<Class>,
+) -> Result<(), tokio::io::Error> {
+    let mut outfile = File::create(format!("{}/out.sql", path_output))
+        .await
+        .expect("Error create directory");
     for class in list_class {
-        let line = format!("{:?}", class);
-        outfile.write_all(line.as_bytes()).await.unwrap();
-        outfile.write_all(b"\n").await.unwrap();
+        let id_class = cuid::cuid().unwrap();
+        let line = format!("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES ('{}', '{}', '{}', '{}', '{}', {}, {}, '{}');", id_class, class.matkul_id, class.lecture_id, class.day, class.code, false, 0, class.session_id);
+        outfile.write_all(line.as_bytes()).await?;
+        outfile.write_all(b"\n").await?;
     }
+    Ok(())
 }

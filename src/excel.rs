@@ -1,4 +1,4 @@
-use crate::Class;
+use crate::repo::Class;
 use calamine::{open_workbook, DataType, Error, Range, Reader, Xlsx};
 use std::collections::HashMap;
 
@@ -12,7 +12,7 @@ impl Excel {
         let range = excel.worksheet_range(sheet_name).unwrap()?;
         Ok(Self { range })
     }
-    fn get_subject_id_class(
+    fn parse_subject_class(
         val: &&str,
         subject_map: &HashMap<String, String>,
     ) -> Option<(String, String)> {
@@ -37,7 +37,7 @@ impl Excel {
         };
         Some((subject_id.to_string(), class_code.to_string()))
     }
-    fn get_lecturer_id(
+    fn parse_lecturer(
         &self,
         row: u32,
         col: u32,
@@ -65,7 +65,7 @@ impl Excel {
         };
         Some(lecture_id.to_string())
     }
-    fn get_session_id(&self, row_idx: u32, session_map: &HashMap<String, u32>) -> Option<u32> {
+    fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, u32>) -> Option<u32> {
         let session_name = self
             .range
             .get_value((row_idx, 1))
@@ -98,7 +98,7 @@ impl Excel {
                         continue;
                     }
                 };
-                let (subject_id, class_code) = match Self::get_subject_id_class(&val, &list_subject)
+                let (subject_id, class_code) = match Self::parse_subject_class(&val, &list_subject)
                 {
                     Some(val) => val,
                     None => {
@@ -106,7 +106,7 @@ impl Excel {
                     }
                 };
                 let lecturer_id =
-                    match self.get_lecturer_id(row_idx as u32, col_idx as u32, &list_lecture) {
+                    match self.parse_lecturer(row_idx as u32, col_idx as u32, &list_lecture) {
                         Some(val) => val,
                         None => {
                             continue;
@@ -119,7 +119,7 @@ impl Excel {
                     43..=56 => "Kamis",
                     _ => "Jum'at",
                 };
-                let session_id = match self.get_session_id(row_idx as u32, &list_session) {
+                let session_id = match self.parse_session(row_idx as u32, &list_session) {
                     Some(val) => val,
                     None => {
                         continue;
