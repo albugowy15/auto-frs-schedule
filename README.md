@@ -21,7 +21,7 @@ Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule f
 
 
 ```
-auto-frs-schedule excel-to-db -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
+auto-frs-schedule parse-excel -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to `out/out.txt` directory.
 
