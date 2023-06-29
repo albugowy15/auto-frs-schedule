@@ -134,6 +134,7 @@ impl Excel {
                 });
             }
         }
+        println!("Succesfully parsed {} classes from excel", list_class.len());
         Ok(list_class)
     }
 }
