@@ -1,5 +1,5 @@
 use crate::repo::Class;
-use calamine::{open_workbook, DataType, Error, Range, Reader, Xlsx};
+use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
 use std::collections::HashMap;
 
 pub struct Excel {
@@ -7,9 +7,11 @@ pub struct Excel {
 }
 
 impl Excel {
-    pub fn new(file_path: &String, sheet_name: &String) -> Result<Self, Error> {
+    pub fn new(file_path: &String, sheet_name: &String) -> Result<Self, calamine::Error> {
         let mut excel: Xlsx<_> = open_workbook(file_path)?;
-        let range = excel.worksheet_range(sheet_name).unwrap()?;
+        let range = excel
+            .worksheet_range(sheet_name)
+            .expect("Error opening sheet, make sure sheet name is exists")?;
         Ok(Self { range })
     }
     fn parse_subject_class(
@@ -46,9 +48,9 @@ impl Excel {
         let lecturer = self
             .range
             .get_value((row + 1, col))
-            .unwrap()
+            .expect("Error get lecturer value")
             .get_string()
-            .unwrap()
+            .expect("Error get lecturer string value")
             .split("/")
             .collect::<Vec<&str>>()[2];
         let lecturer_code = if lecturer.len() > 2 {
@@ -68,9 +70,9 @@ impl Excel {
         let session_name = self
             .range
             .get_value((row_idx, 1))
-            .unwrap()
+            .expect("Error get session value")
             .get_string()
-            .unwrap()
+            .expect("Error get string session value")
             .split(" - ")
             .collect::<Vec<&str>>()[0];
         let session_id = match session_map.get(session_name) {
@@ -86,7 +88,7 @@ impl Excel {
         list_subject: &HashMap<String, String>,
         list_lecture: &HashMap<String, String>,
         list_session: &HashMap<String, u32>,
-    ) -> Result<Vec<Class>, Error> {
+    ) -> Result<Vec<Class>, calamine::Error> {
         let mut list_class: Vec<Class> = Vec::new();
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
