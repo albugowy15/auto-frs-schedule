@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use mysql_async::prelude::{Query, Queryable, WithParams};
+use std::collections::HashMap;
 
 pub struct ClassRepository {
     pub subjects: HashMap<String, String>,
@@ -95,7 +94,7 @@ impl ClassRepository {
         conn.query_drop("DELETE FROM Class").await?;
         let prepared_stmt = conn.prep("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").await?;
         for item in data.iter() {
-            let id_class = cuid::cuid().unwrap();
+            let id_class = cuid::cuid().expect("Error creating cuid");
             let values = (
                 id_class.to_string(),
                 &item.matkul_id,
