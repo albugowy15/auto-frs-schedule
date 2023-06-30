@@ -42,7 +42,6 @@ impl ClassRepository {
         loaded_subject.into_iter().for_each(|subject| {
             self.subjects.insert(subject.name, subject.id);
         });
-        println!("Succesfully fetch all subjects from DB");
         Ok(())
     }
 
@@ -62,7 +61,6 @@ impl ClassRepository {
         loaded_lecture.into_iter().for_each(|lecture| {
             self.lecturers.insert(lecture.code, lecture.id);
         });
-        println!("Succesfully fetch all lecturers from DB");
         Ok(())
     }
 
@@ -83,7 +81,6 @@ impl ClassRepository {
             let session_start = session.session_time.split("-").collect::<Vec<&str>>()[0];
             self.sessions.insert(session_start.to_string(), session.id);
         });
-        println!("Succesfully fetch all sessions from DB");
         Ok(())
     }
 
@@ -93,24 +90,12 @@ impl ClassRepository {
         conn: &mut mysql_async::Conn,
         data: Vec<Class>,
     ) -> Result<(), mysql_async::Error> {
-        println!("Start insert class to DB...");
         conn.query_drop("DELETE FROM Plan").await?;
         conn.query_drop("DELETE FROM _ClassToPlan").await?;
         conn.query_drop("DELETE FROM Class").await?;
         let prepared_stmt = conn.prep("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").await?;
         for item in data.iter() {
             let id_class = cuid::cuid().unwrap();
-            println!(
-                "Inserting : {}, {}, {}, {}, {}, {}, {}, {}",
-                id_class,
-                item.matkul_id,
-                item.lecture_id,
-                item.day,
-                item.code,
-                false,
-                0,
-                item.session_id
-            );
             let values = (
                 id_class.to_string(),
                 &item.matkul_id,
@@ -123,7 +108,6 @@ impl ClassRepository {
             );
             conn.exec_drop(&prepared_stmt, values).await?;
         }
-        println!("Succesfully insert {} classes to DB", data.len());
         Ok(())
     }
 }

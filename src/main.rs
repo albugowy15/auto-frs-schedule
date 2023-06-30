@@ -4,6 +4,7 @@ use auto_frs_schedule::{
     repo::{Class, ClassRepository},
 };
 use clap::{Parser, Subcommand};
+use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use std::{env, error::Error};
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -35,12 +36,18 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let db_url = env::var("FRS_HELPER_DB_URL").expect("FRS_HELPER_DB_URL must be set");
     let cli = Cli::parse();
+    let bar = ProgressBar::new(100);
+    bar.set_style(ProgressStyle::with_template("{bar:60.cyan/blue} {pos}/{len} {msg}").unwrap());
+    bar.set_message("Establish DB Connection");
+    bar.inc(10);
+    let db_url = env::var("FRS_HELPER_DB_URL").expect("FRS_HELPER_DB_URL must be set");
     let mut db = Connection::create_connection(&db_url).await?;
 
     match &cli.command {
         Some(Commands::ExcelToDB { file, sheet }) => {
+            bar.set_message("Opening excel file");
+            bar.inc(20);
             let path_to_excel = match file {
                 Some(path) => path.to_str().unwrap().to_string(),
                 None => {
@@ -48,10 +55,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             };
             let mut class_repo = ClassRepository::new();
+            bar.set_message("Get all subjects from DB");
+            bar.inc(10);
             class_repo.get_all_subject(&mut db.conn).await?;
+            bar.set_message("Get all lecturers from DB");
+            bar.inc(10);
             class_repo.get_all_lecture(&mut db.conn).await?;
+            bar.set_message("Get all sessions from DB");
+            bar.inc(10);
             class_repo.get_all_session(&mut db.conn).await?;
+            bar.set_message("Parse class schedule from Excel");
+            bar.inc(10);
             let list_class = parse_excel(&path_to_excel, &sheet, &class_repo)?;
+            let bar_msg = format!("Insert {} classes to DB", list_class.len());
+            bar.set_message(bar_msg);
+            bar.inc(10);
             class_repo.insert_data(&mut db.conn, list_class).await?;
         }
         Some(Commands::ParseExcel {
@@ -59,6 +77,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             sheet,
             outdir,
         }) => {
+            bar.set_message("Opening excel file");
+            bar.inc(10);
             let path_to_excel = match file {
                 Some(path) => path.to_str().unwrap().to_string(),
                 None => {
@@ -66,23 +86,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             };
             let mut class_repo = ClassRepository::new();
+            bar.set_message("Get all subjects from DB");
+            bar.inc(10);
             class_repo.get_all_subject(&mut db.conn).await?;
+            bar.set_message("Get all lecturers from DB");
+            bar.inc(10);
             class_repo.get_all_lecture(&mut db.conn).await?;
+            bar.set_message("Get all sessions from DB");
+            bar.inc(10);
             class_repo.get_all_session(&mut db.conn).await?;
+            bar.set_message("Parse class schedule from Excel");
+            bar.inc(10);
             let list_class = parse_excel(&path_to_excel, &sheet, &class_repo)?;
+            bar.set_message("Open out directory");
+            bar.inc(10);
             let path_output = match outdir {
                 Some(path) => path.to_str().unwrap().to_string(),
                 None => {
                     panic!("Error output path not found")
                 }
             };
+            bar.set_message("Write to out directory");
+            bar.inc(10);
             write_output(&path_output, &list_class).await?;
         }
         None => {
             println!("No command provided");
         }
     }
+    bar.set_message("Closing DB Connection");
+    bar.inc(10);
     db.close_connection().await?;
+    bar.set_message("Succesfully parsed excel");
+    bar.inc(10);
+    bar.finish();
     Ok(())
 }
 
@@ -111,6 +148,5 @@ async fn write_output(
         outfile.write_all(line.as_bytes()).await?;
         outfile.write_all(b"\n").await?;
     }
-    println!("Successfully write out.sql at {}", path_output);
     Ok(())
 }
