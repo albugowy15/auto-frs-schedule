@@ -59,7 +59,6 @@ impl Excel {
         let lecture_id = match lecturer_map.get(lecturer_code) {
             Some(val) => val,
             None => {
-                println!("No lecture id for : {}", lecturer_code);
                 return None;
             }
         };
@@ -77,7 +76,6 @@ impl Excel {
         let session_id = match session_map.get(session_name) {
             Some(val) => *val,
             None => {
-                println!("No session id for : {}", session_name);
                 return None;
             }
         };
@@ -134,7 +132,6 @@ impl Excel {
                 });
             }
         }
-        println!("Succesfully parsed {} classes from excel", list_class.len());
         Ok(list_class)
     }
 }
