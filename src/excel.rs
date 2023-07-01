@@ -1,14 +1,14 @@
 use crate::repo::Class;
 use anyhow::{Context, Result};
 use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 pub struct Excel {
     range: Range<DataType>,
 }
 
 impl Excel {
-    pub fn new(file_path: &String, sheet_name: &String) -> Result<Self> {
+    pub fn new(file_path: &PathBuf, sheet_name: &String) -> Result<Self> {
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| format!("Cannot open excel file"))?;
         let range = excel
