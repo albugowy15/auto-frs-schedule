@@ -1,4 +1,5 @@
 use crate::repo::Class;
+use anyhow::{Context, Result};
 use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
 use std::collections::HashMap;
 
@@ -7,11 +8,13 @@ pub struct Excel {
 }
 
 impl Excel {
-    pub fn new(file_path: &String, sheet_name: &String) -> Result<Self, calamine::Error> {
-        let mut excel: Xlsx<_> = open_workbook(file_path)?;
+    pub fn new(file_path: &String, sheet_name: &String) -> Result<Self> {
+        let mut excel: Xlsx<_> =
+            open_workbook(file_path).with_context(|| format!("Cannot open excel file"))?;
         let range = excel
             .worksheet_range(sheet_name)
-            .expect("Error opening sheet, make sure sheet name is exists")?;
+            .context("Error opening sheet, make sure sheet name is exists")?
+            .with_context(|| format!("Could not read excel range from sheet {}", sheet_name))?;
         Ok(Self { range })
     }
     fn parse_subject_class(
@@ -88,7 +91,7 @@ impl Excel {
         list_subject: &HashMap<String, String>,
         list_lecture: &HashMap<String, String>,
         list_session: &HashMap<String, u32>,
-    ) -> Result<Vec<Class>, calamine::Error> {
+    ) -> Result<Vec<Class>> {
         let mut list_class: Vec<Class> = Vec::new();
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
