@@ -69,7 +69,7 @@ impl Excel {
         };
         Some(lecture_id.to_string())
     }
-    fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, u32>) -> Option<u32> {
+    fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i32>) -> Option<i32> {
         let session_name = self
             .range
             .get_value((row_idx, 1))
@@ -90,7 +90,7 @@ impl Excel {
         &self,
         list_subject: &HashMap<String, String>,
         list_lecture: &HashMap<String, String>,
-        list_session: &HashMap<String, u32>,
+        list_session: &HashMap<String, i32>,
     ) -> Result<Vec<Class>> {
         let mut list_class: Vec<Class> = Vec::new();
         for (row_idx, row) in self.range.rows().enumerate() {
