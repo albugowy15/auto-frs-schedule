@@ -35,22 +35,22 @@ async fn main() -> Result<()> {
     println!("Establish DB Connection");
     let db_url =
         env::var("FRS_HELPER_DB_URL").with_context(|| format!("FRS_HELPER_DB_URL must be set"))?;
-    let mut db = Connection::create_connection(&db_url)
+    let pool = Connection::create_connection(&db_url)
         .await
         .with_context(|| format!("Could not establish DB connection"))?;
 
     println!("Get all subjects from DB");
-    let subjects = ClassRepository::get_all_subject(&mut db.conn)
+    let subjects = ClassRepository::get_all_subject(&pool)
         .await
         .with_context(|| format!("Error retrieve all subjects from DB"))?;
 
     println!("Get all lecturers from DB");
-    let lecturers = ClassRepository::get_all_lecture(&mut db.conn)
+    let lecturers = ClassRepository::get_all_lecture(&pool)
         .await
         .with_context(|| format!("Error retrieve all lecturers from DB"))?;
 
     println!("Get all sessions from DB");
-    let sessions = ClassRepository::get_all_session(&mut db.conn)
+    let sessions = ClassRepository::get_all_session(&pool)
         .await
         .with_context(|| format!("Error retrieve all sessions from DB"))?;
 
@@ -68,7 +68,7 @@ async fn main() -> Result<()> {
 
     if let Some(_is_push) = &cli.push {
         println!("Insert {} classes to DB", list_class.len());
-        ClassRepository::insert_data(&mut db.conn, &list_class)
+        ClassRepository::insert_data(&pool, &list_class)
             .await
             .with_context(|| format!("Error inserting class to DB"))?;
     }
@@ -79,11 +79,6 @@ async fn main() -> Result<()> {
             .await
             .with_context(|| format!("Error writing output to sql"))?;
     }
-
-    println!("Closing DB Connection");
-    db.close_connection()
-        .await
-        .with_context(|| "Error closing DB Connection")?;
     println!("Done");
     Ok(())
 }
@@ -95,7 +90,7 @@ async fn write_output(path_output: &PathBuf, list_class: &Vec<Class>) -> Result<
         .with_context(|| format!("Error create directory"))?;
     for class in list_class {
         let id_class = cuid::cuid().with_context(|| format!("Could not creat cuid"))?;
-        let line = format!("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES ('{}', '{}', '{}', '{}', '{}', {}, {}, '{}');", id_class, class.matkul_id, class.lecture_id, class.day, class.code, false, 0, class.session_id);
+        let line = format!("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {}, {});", id_class, class.matkul_id, class.lecture_id, class.day, class.code, false, 0, class.session_id);
         outfile
             .write_all(line.as_bytes())
             .await
