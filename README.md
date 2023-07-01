@@ -3,15 +3,11 @@
 ## Description
 This project is a part of the [Informatics FRS Helper](https://github.com/albugowy15/informatics-frs-helper) project to automatically parse all class schedule from Excel files to MySQL database.
 
-## Supported Commands and arguments
-`excel-to-db` : Parse all class schedule from Excel and save the output to MySQL database.
-- `-f --file` : Path to excel file
-- `-s --sheet` : Excel sheet name
-
-`parse-excel` : Parse all class schedule from Excel and save the output as `out.sql` file.
-- `-f --file` : Path to excel file
-- `-s --sheet` : Excel sheet name
-- `-o --outdir` : Output directory
+## Supported Arguments
+- `-p --push` : Optional arg to determine wether only to parse excel or also push class to DB
+- `-f --file` : Required arg for path to excel file
+- `-s --sheet` : Required arg for excel sheet name
+- `-o --outdir` : Optional arg to write the sql statement to output directory
 
 ## How To Run
 
@@ -51,15 +47,20 @@ This project is a part of the [Informatics FRS Helper](https://github.com/albugo
 
 ## Example
 ```
-auto-frs-schedule excel-to-db -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah"
+auto-frs-schedule --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah"
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to MySQL database.
 
 
 ```
-auto-frs-schedule parse-excel -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
+auto-frs-schedule -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to `out/out.sql` directory.
+
+```
+auto-frs-schedule --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
+```
+Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Push the output to MySQL database and also save the output to `out/out.sql` directory.
 
 ## Libraries
 ### calamine
