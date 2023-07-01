@@ -2,11 +2,7 @@ use anyhow::{Context, Result};
 use mysql_async::prelude::{Query, Queryable, WithParams};
 use std::collections::HashMap;
 
-pub struct ClassRepository {
-    pub subjects: HashMap<String, String>,
-    pub lecturers: HashMap<String, String>,
-    pub sessions: HashMap<String, u32>,
-}
+pub struct ClassRepository {}
 
 #[derive(Debug)]
 pub struct Class {
@@ -18,15 +14,7 @@ pub struct Class {
 }
 
 impl ClassRepository {
-    pub fn new() -> Self {
-        Self {
-            subjects: HashMap::new(),
-            lecturers: HashMap::new(),
-            sessions: HashMap::new(),
-        }
-    }
-
-    pub async fn get_all_subject(&mut self, conn: &mut mysql_async::Conn) -> Result<()> {
+    pub async fn get_all_subject(conn: &mut mysql_async::Conn) -> Result<HashMap<String, String>> {
         struct Subject {
             id: String,
             name: String,
@@ -36,14 +24,15 @@ impl ClassRepository {
             .map(conn, |(id, name)| Subject { id, name })
             .await
             .with_context(|| format!("Error executing get_al_subject sql"))?;
+        let mut subjects = HashMap::new();
 
         loaded_subject.into_iter().for_each(|subject| {
-            self.subjects.insert(subject.name, subject.id);
+            subjects.insert(subject.name, subject.id);
         });
-        Ok(())
+        Ok(subjects)
     }
 
-    pub async fn get_all_lecture(&mut self, conn: &mut mysql_async::Conn) -> Result<()> {
+    pub async fn get_all_lecture(conn: &mut mysql_async::Conn) -> Result<HashMap<String, String>> {
         struct Lecturer {
             id: String,
             code: String,
@@ -53,14 +42,15 @@ impl ClassRepository {
             .map(conn, |(id, code)| Lecturer { id, code })
             .await
             .with_context(|| format!("Error executing get_all_lecturer sql"))?;
+        let mut lecturers = HashMap::new();
 
         loaded_lecture.into_iter().for_each(|lecture| {
-            self.lecturers.insert(lecture.code, lecture.id);
+            lecturers.insert(lecture.code, lecture.id);
         });
-        Ok(())
+        Ok(lecturers)
     }
 
-    pub async fn get_all_session(&mut self, conn: &mut mysql_async::Conn) -> Result<()> {
+    pub async fn get_all_session(conn: &mut mysql_async::Conn) -> Result<HashMap<String, u32>> {
         struct Session {
             id: u32,
             session_time: String,
@@ -70,16 +60,17 @@ impl ClassRepository {
             .map(conn, |(id, session_time)| Session { id, session_time })
             .await
             .with_context(|| format!("Error executing get_all_session sql"))?;
+        let mut sessions = HashMap::new();
 
         loaded_session.into_iter().for_each(|session| {
             let session_start = session.session_time.split("-").collect::<Vec<&str>>()[0];
-            self.sessions.insert(session_start.to_string(), session.id);
+            sessions.insert(session_start.to_string(), session.id);
         });
-        Ok(())
+        Ok(sessions)
     }
 
     #[allow(deprecated)]
-    pub async fn insert_data(&self, conn: &mut mysql_async::Conn, data: Vec<Class>) -> Result<()> {
+    pub async fn insert_data(conn: &mut mysql_async::Conn, data: &Vec<Class>) -> Result<()> {
         conn.query_drop("DELETE FROM Plan")
             .await
             .with_context(|| format!("Could not delete all Plan"))?;
