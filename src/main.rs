@@ -1,13 +1,21 @@
+mod db;
+mod excel;
+mod repo;
+
 use anyhow::{Context, Result};
-use auto_frs_schedule::{
+use clap::Parser;
+use std::env;
+use std::path::PathBuf;
+use tokio::{
+    fs::File,
+    io::{AsyncWriteExt, BufWriter},
+};
+
+use crate::{
     db::Connection,
     excel::Excel,
     repo::{Class, ClassRepository},
 };
-use clap::Parser;
-use std::env;
-use std::path::PathBuf;
-use tokio::{fs::File, io::AsyncWriteExt};
 
 #[derive(Parser)]
 struct Cli {
@@ -85,17 +93,42 @@ async fn main() -> Result<()> {
 
 #[allow(deprecated)]
 async fn write_output(path_output: &PathBuf, list_class: &Vec<Class>) -> Result<()> {
-    let mut outfile = File::create(format!("{}/out.sql", path_output.display()))
-        .await
-        .with_context(|| format!("Error create directory"))?;
-    for class in list_class {
-        let id_class = cuid::cuid().with_context(|| format!("Could not creat cuid"))?;
-        let line = format!("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (\"{}\", \"{}\", \"{}\", \"{}\", \"{}\", {}, {}, {});", id_class, class.matkul_id, class.lecture_id, class.day, class.code, false, 0, class.session_id);
-        outfile
-            .write_all(line.as_bytes())
+    let outfile_path = path_output.join("out.sql");
+    let mut outfile = BufWriter::new(
+        File::create(outfile_path)
             .await
-            .with_context(|| format!("Error writing {} to file", line))?;
-        outfile.write_all(b"\n").await?;
+            .with_context(|| "Error creating output file")?,
+    );
+    let mut buffer = String::with_capacity(256);
+
+    for class in list_class {
+        let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
+        buffer.clear();
+        buffer.push_str("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (\"");
+        buffer.push_str(&id_class);
+        buffer.push_str("\", \"");
+        buffer.push_str(&class.matkul_id);
+        buffer.push_str("\", \"");
+        buffer.push_str(&class.lecture_id);
+        buffer.push_str("\", \"");
+        buffer.push_str(&class.day);
+        buffer.push_str("\", \"");
+        buffer.push_str(&class.code);
+        buffer.push_str("\", ");
+        buffer.push_str("false, 0, ");
+        buffer.push_str(&class.session_id.to_string());
+        buffer.push_str(");");
+        buffer.push('\n');
+
+        outfile
+            .write_all(buffer.as_bytes())
+            .await
+            .with_context(|| format!("Error writing to file: {}", buffer))?;
     }
+
+    outfile
+        .flush()
+        .await
+        .with_context(|| "Error flushing output file")?;
     Ok(())
 }

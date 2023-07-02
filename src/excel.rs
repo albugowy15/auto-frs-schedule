@@ -8,7 +8,7 @@ pub struct Excel {
 }
 
 impl Excel {
-    pub fn new(file_path: &PathBuf, sheet_name: &String) -> Result<Self> {
+    pub fn new(file_path: &PathBuf, sheet_name: &str) -> Result<Self> {
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| format!("Cannot open excel file"))?;
         let range = excel
@@ -18,7 +18,7 @@ impl Excel {
         Ok(Self { range })
     }
     fn parse_subject_class(
-        val: &&str,
+        val: &str,
         subject_map: &HashMap<String, String>,
     ) -> Option<(String, String)> {
         let subject_name = val.split("-").collect::<Vec<&str>>();
@@ -69,7 +69,7 @@ impl Excel {
         };
         Some(lecture_id.to_string())
     }
-    fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i32>) -> Option<i32> {
+    fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i8>) -> Option<i8> {
         let session_name = self
             .range
             .get_value((row_idx, 1))
@@ -90,53 +90,48 @@ impl Excel {
         &self,
         list_subject: &HashMap<String, String>,
         list_lecture: &HashMap<String, String>,
-        list_session: &HashMap<String, i32>,
+        list_session: &HashMap<String, i8>,
     ) -> Result<Vec<Class>> {
-        let mut list_class: Vec<Class> = Vec::new();
+        let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1 as usize);
+
+        let days = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
+
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
                 let val = match c.get_string() {
                     Some(val) => val,
-                    None => {
-                        continue;
-                    }
+                    None => continue,
                 };
+
                 let (subject_id, class_code) = match Self::parse_subject_class(&val, &list_subject)
                 {
                     Some(val) => val,
-                    None => {
-                        continue;
-                    }
+                    None => continue,
                 };
+
                 let lecturer_id =
                     match self.parse_lecturer(row_idx as u32, col_idx as u32, &list_lecture) {
                         Some(val) => val,
-                        None => {
-                            continue;
-                        }
+                        None => continue,
                     };
-                let day = match row_idx {
-                    0..=14 => "Senin",
-                    15..=28 => "Selasa",
-                    29..=42 => "Rabu",
-                    43..=56 => "Kamis",
-                    _ => "Jum'at",
-                };
+
+                let day = days[row_idx / 15];
+
                 let session_id = match self.parse_session(row_idx as u32, &list_session) {
                     Some(val) => val,
-                    None => {
-                        continue;
-                    }
+                    None => continue,
                 };
+
                 list_class.push(Class {
-                    matkul_id: subject_id.to_string(),
-                    lecture_id: lecturer_id.to_string(),
+                    matkul_id: subject_id,
+                    lecture_id: lecturer_id,
                     day: day.to_string(),
-                    code: class_code.to_string(),
+                    code: class_code,
                     session_id,
                 });
             }
         }
+
         Ok(list_class)
     }
 }

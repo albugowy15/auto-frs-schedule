@@ -10,7 +10,7 @@ pub struct Class {
     pub lecture_id: String,
     pub day: String,
     pub code: String,
-    pub session_id: i32,
+    pub session_id: i8,
 }
 
 impl ClassRepository {
@@ -40,7 +40,7 @@ impl ClassRepository {
         Ok(lecturers)
     }
 
-    pub async fn get_all_session(pool: &Pool<MySql>) -> Result<HashMap<String, i32>> {
+    pub async fn get_all_session(pool: &Pool<MySql>) -> Result<HashMap<String, i8>> {
         let mut sessions = HashMap::new();
 
         let rows = sqlx::query("SELECT id, session_time FROM Session")
