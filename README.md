@@ -64,10 +64,10 @@ Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule f
 
 ## Libraries
 ### calamine
-Calamine is a pure Rust Excel/OpenDocument Speadsheet file reader: it reads XLSX, XLS, ODS and more.
+Calamine is a pure Rust Excel/OpenDocument Speadsheet file reader: it reads XLSX, XLS, ODS and more. 
 ### tokio
-A runtime for writing reliable, asynchronous, and slim applications with the Rust programming language.
-### mysql_async
-Async Mysql client library implemented in rust based on futures and tokio.
+A runtime for writing reliable, asynchronous, and slim applications with the Rust programming language. 
+### sqlx
+The Rust SQL Toolkit. An async, pure Rust SQL crate featuring compile-time checked queries without a DSL. Supports PostgreSQL, MySQL, SQLite, and MSSQL.
 ### clap
 A full featured, fast Command Line Argument Parser for Rust.
