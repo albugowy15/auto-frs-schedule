@@ -34,8 +34,8 @@ impl ClassRepository {
             .await
             .with_context(|| "Error executing get_all_lecturer sql")?;
 
-        rows.into_iter().for_each(|subject| {
-            lecturers.insert(subject.get("code"), subject.get("id"));
+        rows.into_iter().for_each(|lecturer| {
+            lecturers.insert(lecturer.get("code"), lecturer.get("id"));
         });
         Ok(lecturers)
     }
@@ -49,9 +49,12 @@ impl ClassRepository {
             .with_context(|| "Error executing get_all_session sql")?;
 
         rows.into_iter().for_each(|session| {
-            let session_start: String = session.get("session_time");
             sessions.insert(
-                session_start.split("-").collect::<Vec<&str>>()[0].to_string(),
+                session
+                    .get::<String, &str>("session_time")
+                    .split("-")
+                    .collect::<Vec<&str>>()[0]
+                    .to_string(),
                 session.get("id"),
             );
         });
@@ -76,7 +79,7 @@ impl ClassRepository {
         let prep_sql = "INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
 
         for item in data.iter() {
-            let id_class = cuid::cuid().with_context(|| format!("Could not create cuid"))?;
+            let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
             sqlx::query(prep_sql)
                 .bind(id_class)
                 .bind(&item.matkul_id)

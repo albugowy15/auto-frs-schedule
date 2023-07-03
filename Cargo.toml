@@ -2,6 +2,8 @@
 name = "auto-frs-schedule"
 version = "2.0.0"
 edition = "2021"
+about = "Automatically generate TC FRS schedule from Excel file"
+author = "Mohamad Kholid Bughowi <kholidbughowi@gmail.com>"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -18,6 +18,7 @@ use crate::{
 };
 
 #[derive(Parser)]
+#[command(author, version, about, long_about = None)]
 struct Cli {
     #[arg(
         short,
@@ -41,26 +42,25 @@ struct Cli {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     println!("Establish DB Connection");
-    let db_url =
-        env::var("FRS_HELPER_DB_URL").with_context(|| format!("FRS_HELPER_DB_URL must be set"))?;
+    let db_url = env::var("FRS_HELPER_DB_URL").with_context(|| "FRS_HELPER_DB_URL must be set")?;
     let pool = Connection::create_connection(&db_url)
         .await
-        .with_context(|| format!("Could not establish DB connection"))?;
+        .with_context(|| "Could not establish DB connection")?;
 
     println!("Get all subjects from DB");
     let subjects = ClassRepository::get_all_subject(&pool)
         .await
-        .with_context(|| format!("Error retrieve all subjects from DB"))?;
+        .with_context(|| "Error retrieve all subjects from DB")?;
 
     println!("Get all lecturers from DB");
     let lecturers = ClassRepository::get_all_lecture(&pool)
         .await
-        .with_context(|| format!("Error retrieve all lecturers from DB"))?;
+        .with_context(|| "Error retrieve all lecturers from DB")?;
 
     println!("Get all sessions from DB");
     let sessions = ClassRepository::get_all_session(&pool)
         .await
-        .with_context(|| format!("Error retrieve all sessions from DB"))?;
+        .with_context(|| "Error retrieve all sessions from DB")?;
 
     println!("Parse class schedule from Excel");
     let excel = Excel::new(&cli.file, &cli.sheet).with_context(|| {
@@ -72,20 +72,20 @@ async fn main() -> Result<()> {
     })?;
     let list_class: Vec<Class> = excel
         .parse_excel(&subjects, &lecturers, &sessions)
-        .with_context(|| format!("Error parsing excel"))?;
+        .with_context(|| "Error parsing excel")?;
 
     if let Some(_is_push) = &cli.push {
         println!("Insert {} classes to DB", list_class.len());
         ClassRepository::insert_data(&pool, &list_class)
             .await
-            .with_context(|| format!("Error inserting class to DB"))?;
+            .with_context(|| "Error inserting class to DB")?;
     }
 
     if let Some(path_output) = &cli.outdir {
         println!("Write to out directory");
         write_output(&path_output, &list_class)
             .await
-            .with_context(|| format!("Error writing output to sql"))?;
+            .with_context(|| "Error writing output to sql")?;
     }
     println!("Done");
     Ok(())

@@ -10,7 +10,7 @@ pub struct Excel {
 impl Excel {
     pub fn new(file_path: &PathBuf, sheet_name: &str) -> Result<Self> {
         let mut excel: Xlsx<_> =
-            open_workbook(file_path).with_context(|| format!("Cannot open excel file"))?;
+            open_workbook(file_path).with_context(|| "Cannot open excel file")?;
         let range = excel
             .worksheet_range(sheet_name)
             .context("Error opening sheet, make sure sheet name is exists")?
