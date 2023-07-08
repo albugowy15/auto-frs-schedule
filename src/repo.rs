@@ -1,7 +1,8 @@
+use std::collections::HashMap;
+
 use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 use sqlx::{MySql, Pool, Row};
-use std::collections::HashMap;
 
 pub struct ClassRepository;
 
@@ -16,68 +17,70 @@ pub struct Class {
 
 impl ClassRepository {
     pub async fn get_all_subject(pool: &Pool<MySql>) -> Result<HashMap<String, String>> {
-        let mut subjects = HashMap::new();
         let rows = sqlx::query("SELECT id, name FROM Matkul")
             .fetch_all(pool)
             .await
             .with_context(|| "Error executing get_all_subject sql")?;
 
-        rows.into_iter().for_each(|subject| {
-            subjects.insert(subject.get("name"), subject.get("id"));
-        });
+        let subjects = rows
+            .into_iter()
+            .map(|subject| (subject.get("name"), subject.get("id")))
+            .collect();
+
         Ok(subjects)
     }
 
     pub async fn get_all_lecture(pool: &Pool<MySql>) -> Result<HashMap<String, String>> {
-        let mut lecturers = HashMap::new();
         let rows = sqlx::query("SELECT id, code FROM Lecturer")
             .fetch_all(pool)
             .await
             .with_context(|| "Error executing get_all_lecturer sql")?;
 
-        rows.into_iter().for_each(|lecturer| {
-            lecturers.insert(lecturer.get("code"), lecturer.get("id"));
-        });
+        let lecturers = rows
+            .into_iter()
+            .map(|lecturer| (lecturer.get("code"), lecturer.get("id")))
+            .collect();
         Ok(lecturers)
     }
 
     pub async fn get_all_session(pool: &Pool<MySql>) -> Result<HashMap<String, i8>> {
-        let mut sessions = HashMap::new();
-
         let rows = sqlx::query("SELECT id, session_time FROM Session")
             .fetch_all(pool)
             .await
             .with_context(|| "Error executing get_all_session sql")?;
-
-        rows.into_iter().for_each(|session| {
-            sessions.insert(
-                session
-                    .get::<String, &str>("session_time")
-                    .split("-")
-                    .collect::<Vec<&str>>()[0]
-                    .to_string(),
-                session.get("id"),
-            );
-        });
+        let sessions = rows
+            .into_iter()
+            .map(|session| {
+                (
+                    session
+                        .get::<String, &str>("session_time")
+                        .split("-")
+                        .collect::<Vec<_>>()[0]
+                        .to_string(),
+                    session.get("id"),
+                )
+            })
+            .collect();
         Ok(sessions)
     }
 
     #[allow(deprecated)]
     pub async fn insert_data(pool: &Pool<MySql>, data: &Vec<Class>) -> Result<()> {
+        let mut tx = pool.begin().await?;
         sqlx::query("DELETE FROM Plan")
-            .execute(pool)
+            .execute(&mut tx)
             .await
             .with_context(|| "Could not delete all Plan")?;
         sqlx::query("DELETE FROM _ClassToPlan")
-            .execute(pool)
+            .execute(&mut tx)
             .await
             .with_context(|| "Could not delete all _ClassToPlan")?;
         sqlx::query("DELETE FROM Class")
-            .execute(pool)
+            .execute(&mut tx)
             .await
             .with_context(|| "Could not delete all Class")?;
         sqlx::query("DELETE FROM _ClassToLecturer")
-            .execute(pool)
+            .execute(&mut tx)
             .await
             .with_context(|| "Could not delete all _ClassToLecturer")?;
 
@@ -100,7 +103,7 @@ impl ClassRepository {
                 sqlx::query(prep_class_lecturers_sql)
                     .bind(&id_class)
                     .bind(&lec)
-                    .execute(pool)
+                    .execute(&mut tx)
                     .await
                     .with_context(|| {
                         format!(
@@ -118,13 +121,14 @@ impl ClassRepository {
                 .bind(false)
                 .bind(0)
                 .bind(&item.session_id)
-                .execute(pool)
+                .execute(&mut tx)
                 .await
                 .with_context(|| {
                     format!("Could not insert to Class table with statement {:?}", &item)
                 })?;
             bar.inc(1);
         }
+        tx.commit().await?;
         bar.finish_with_message(format!(
             "Done inserting {} classes to Class table",
             data.len()

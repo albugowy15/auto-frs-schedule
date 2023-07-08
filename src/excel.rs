@@ -50,35 +50,26 @@ impl Excel {
     ) -> Option<Vec<String>> {
         let lecturer = self
             .range
-            .get_value((row + 1, col))
-            .expect("Error get lecturer value")
-            .get_string()
-            .expect("Error get lecturer string value")
+            .get_value((row + 1, col))?
+            .get_string()?
             .split("/")
-            .collect::<Vec<&str>>()[2];
-        let lecturers_code = lecturer.split("-").collect::<Vec<&str>>();
-        let mut lecturers_id = Vec::new();
-        for lecturer_code in lecturers_code {
-            let lecturer_id = match lecturer_map.get(lecturer_code.trim()) {
-                Some(val) => val,
-                None => {
-                    continue;
-                }
-            };
-            lecturers_id.push(lecturer_id.to_string());
-        }
+            .collect::<Vec<_>>()[2];
+        let lecturers_id: Vec<_> = lecturer
+            .split("-")
+            .flat_map(|lecture_code| lecturer_map.get(lecture_code.trim()))
+            .map(String::from)
+            .collect();
         if lecturers_id.is_empty() {
             return None;
+        } else {
+            Some(lecturers_id)
         }
-        Some(lecturers_id)
     }
     fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i8>) -> Option<i8> {
         let session_name = self
             .range
-            .get_value((row_idx, 1))
-            .expect("Error get session value")
-            .get_string()
-            .expect("Error get string session value")
+            .get_value((row_idx, 1))?
+            .get_string()?
             .split(" - ")
             .collect::<Vec<&str>>()[0];
         let session_id = match session_map.get(session_name) {
@@ -127,7 +118,7 @@ impl Excel {
 
                 list_class.push(Class {
                     matkul_id: subject_id,
-                    lecturers_id: lecturers_id,
+                    lecturers_id,
                     day: day.to_string(),
                     code: class_code,
                     session_id,

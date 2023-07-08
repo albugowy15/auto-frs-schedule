@@ -119,13 +119,11 @@ async fn write_output(path_output: &PathBuf, list_class: &Vec<Class>) -> Result<
         buffer.push_str(&class.session_id.to_string());
         buffer.push_str(");");
         buffer.push('\n');
-
         outfile
             .write_all(buffer.as_bytes())
             .await
             .with_context(|| format!("Error writing to file: {}", buffer))?;
     }
-
     outfile
         .flush()
         .await
