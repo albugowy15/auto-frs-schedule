@@ -18,7 +18,7 @@ use crate::{
 };
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(version, about)]
 struct Cli {
     #[arg(
         short,

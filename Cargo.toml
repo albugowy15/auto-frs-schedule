@@ -1,9 +1,11 @@
 [package]
 name = "auto-frs-schedule"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
-about = "Automatically generate TC FRS schedule from Excel file"
-author = "Mohamad Kholid Bughowi <kholidbughowi@gmail.com>"
+description = "Automatically generate TC FRS schedule from Excel file"
+authors = ["Mohamad Kholid Bughowi <kholidbughowi@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/albugowy15/auto-frs-schedule"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,7 +17,7 @@ lto = true
 calamine = "0.21.2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 cuid = "1.3.1"
-clap = { version = "4.3.9", features = ["derive"] }
+clap = { version = "4.3.11", features = ["derive"] }
 anyhow = "1.0.71"
 sqlx = { version = "0.6.3", features = [ "runtime-tokio-native-tls", "mysql" ] }
 indicatif = "0.17.5"

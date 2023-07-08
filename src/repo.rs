@@ -85,7 +85,13 @@ impl ClassRepository {
         let prep_class_lecturers_sql = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
 
         let bar = ProgressBar::new(data.len() as u64);
-        bar.set_style(ProgressStyle::with_template("{bar:50.cyan/blue} {pos:>7}/{len:7}").unwrap());
+        bar.set_style(
+            ProgressStyle::with_template(
+                "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len}",
+            )
+            .unwrap()
+            .progress_chars("#>-"),
+        );
 
         for item in data.iter() {
             let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
@@ -119,7 +125,10 @@ impl ClassRepository {
                 })?;
             bar.inc(1);
         }
-        bar.finish();
+        bar.finish_with_message(format!(
+            "Done inserting {} classes to Class table",
+            data.len()
+        ));
         Ok(())
     }
 }
