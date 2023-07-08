@@ -25,7 +25,7 @@ struct Cli {
         long,
         value_name = "Optional to determine wether only parse or also push class to DB"
     )]
-    push: Option<bool>,
+    push: bool,
     #[arg(short, long, value_name = "Required for excel file path")]
     file: PathBuf,
     #[arg(short, long, value_name = "Required for excel sheet name")]
@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
         .parse_excel(&subjects, &lecturers, &sessions)
         .with_context(|| "Error parsing excel")?;
 
-    if let Some(_is_push) = &cli.push {
+    if cli.push == true {
         println!("Insert {} classes to DB", list_class.len());
         ClassRepository::insert_data(&pool, &list_class)
             .await
@@ -104,12 +104,12 @@ async fn write_output(path_output: &PathBuf, list_class: &Vec<Class>) -> Result<
     for class in list_class {
         let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
         buffer.clear();
-        buffer.push_str("INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES (\"");
+        buffer.push_str(
+            "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES (\"",
+        );
         buffer.push_str(&id_class);
         buffer.push_str("\", \"");
         buffer.push_str(&class.matkul_id);
-        buffer.push_str("\", \"");
-        buffer.push_str(&class.lecture_id);
         buffer.push_str("\", \"");
         buffer.push_str(&class.day);
         buffer.push_str("\", \"");

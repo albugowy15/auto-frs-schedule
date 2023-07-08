@@ -47,7 +47,7 @@ impl Excel {
         row: u32,
         col: u32,
         lecturer_map: &HashMap<String, String>,
-    ) -> Option<String> {
+    ) -> Option<Vec<String>> {
         let lecturer = self
             .range
             .get_value((row + 1, col))
@@ -56,18 +56,21 @@ impl Excel {
             .expect("Error get lecturer string value")
             .split("/")
             .collect::<Vec<&str>>()[2];
-        let lecturer_code = if lecturer.len() > 2 {
-            lecturer.split("-").collect::<Vec<&str>>()[0].trim()
-        } else {
-            lecturer
-        };
-        let lecture_id = match lecturer_map.get(lecturer_code) {
-            Some(val) => val,
-            None => {
-                return None;
-            }
-        };
-        Some(lecture_id.to_string())
+        let lecturers_code = lecturer.split("-").collect::<Vec<&str>>();
+        let mut lecturers_id = Vec::new();
+        for lecturer_code in lecturers_code {
+            let lecturer_id = match lecturer_map.get(lecturer_code.trim()) {
+                Some(val) => val,
+                None => {
+                    continue;
+                }
+            };
+            lecturers_id.push(lecturer_id.to_string());
+        }
+        if lecturers_id.is_empty() {
+            return None;
+        }
+        Some(lecturers_id)
     }
     fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i8>) -> Option<i8> {
         let session_name = self
@@ -109,7 +112,7 @@ impl Excel {
                     None => continue,
                 };
 
-                let lecturer_id =
+                let lecturers_id =
                     match self.parse_lecturer(row_idx as u32, col_idx as u32, &list_lecture) {
                         Some(val) => val,
                         None => continue,
@@ -124,7 +127,7 @@ impl Excel {
 
                 list_class.push(Class {
                     matkul_id: subject_id,
-                    lecture_id: lecturer_id,
+                    lecturers_id: lecturers_id,
                     day: day.to_string(),
                     code: class_code,
                     session_id,

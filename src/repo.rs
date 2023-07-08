@@ -1,13 +1,14 @@
 use anyhow::{Context, Result};
+use indicatif::{ProgressBar, ProgressStyle};
 use sqlx::{MySql, Pool, Row};
 use std::collections::HashMap;
 
-pub struct ClassRepository {}
+pub struct ClassRepository;
 
 #[derive(Debug)]
 pub struct Class {
     pub matkul_id: String,
-    pub lecture_id: String,
+    pub lecturers_id: Vec<String>,
     pub day: String,
     pub code: String,
     pub session_id: i8,
@@ -75,15 +76,37 @@ impl ClassRepository {
             .execute(pool)
             .await
             .with_context(|| "Could not delete all Class")?;
+        sqlx::query("DELETE FROM _ClassToLecturer")
+            .execute(pool)
+            .await
+            .with_context(|| "Could not delete all _ClassToLecturer")?;
 
-        let prep_sql = "INSERT INTO Class (id, matkulId, lecturerId, day, code, isAksel, taken, sessionId) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+        let prep_class_sql = "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        let prep_class_lecturers_sql = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
+
+        let bar = ProgressBar::new(data.len() as u64);
+        bar.set_style(ProgressStyle::with_template("{bar:50.cyan/blue} {pos:>7}/{len:7}").unwrap());
 
         for item in data.iter() {
             let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
-            sqlx::query(prep_sql)
-                .bind(id_class)
+
+            for lec in item.lecturers_id.iter() {
+                sqlx::query(prep_class_lecturers_sql)
+                    .bind(&id_class)
+                    .bind(&lec)
+                    .execute(pool)
+                    .await
+                    .with_context(|| {
+                        format!(
+                            "Could not insert to _ClassToLecturer table with statement {:?}",
+                            &lec
+                        )
+                    })?;
+            }
+
+            sqlx::query(prep_class_sql)
+                .bind(&id_class)
                 .bind(&item.matkul_id)
-                .bind(&item.lecture_id)
                 .bind(&item.day)
                 .bind(&item.code)
                 .bind(false)
@@ -94,7 +117,9 @@ impl ClassRepository {
                 .with_context(|| {
                     format!("Could not insert to Class table with statement {:?}", &item)
                 })?;
+            bar.inc(1);
         }
+        bar.finish();
         Ok(())
     }
 }
