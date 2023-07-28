@@ -53,14 +53,14 @@ Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule f
 
 
 ```
-auto-frs-schedule -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
+auto-frs-schedule -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
 ```
-Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to `out/out.sql` directory.
+Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to `result/classes.sql` directory.
 
 ```
-auto-frs-schedule --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o out/
+auto-frs-schedule --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
 ```
-Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Push the output to MySQL database and also save the output to `out/out.sql` directory.
+Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Push the output to MySQL database and also save the output to `result/classes.sql` directory.
 
 ## Libraries
 ### calamine
