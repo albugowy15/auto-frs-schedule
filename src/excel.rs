@@ -3,6 +3,8 @@ use anyhow::{Context, Result};
 use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
 use std::{collections::HashMap, path::PathBuf};
 
+const DAYS: [&str; 5] = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
+
 pub struct Excel {
     range: Range<DataType>,
 }
@@ -34,13 +36,10 @@ impl Excel {
             } else {
                 (subject_name[0].trim(), subject_name[1].trim())
             };
-        let subject_id = match subject_map.get(subject_valid) {
-            Some(val) => val,
-            None => {
-                return None;
-            }
-        };
-        Some((subject_id.to_string(), class_code.to_string()))
+        match subject_map.get(subject_valid) {
+            Some(val) => Some((val.to_string(), class_code.to_string())),
+            None => None,
+        }
     }
     fn parse_lecturer(
         &self,
@@ -59,10 +58,9 @@ impl Excel {
             .flat_map(|lecture_code| lecturer_map.get(lecture_code.trim()))
             .map(String::from)
             .collect();
-        if lecturers_id.is_empty() {
-            return None;
-        } else {
-            Some(lecturers_id)
+        match lecturers_id.is_empty() {
+            true => None,
+            false => Some(lecturers_id),
         }
     }
     fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i8>) -> Option<i8> {
@@ -72,13 +70,10 @@ impl Excel {
             .get_string()?
             .split(" - ")
             .collect::<Vec<&str>>()[0];
-        let session_id = match session_map.get(session_name) {
-            Some(val) => *val,
-            None => {
-                return None;
-            }
-        };
-        Some(session_id)
+        match session_map.get(session_name) {
+            Some(val) => Some(*val),
+            None => None,
+        }
     }
     pub fn parse_excel(
         &self,
@@ -87,8 +82,6 @@ impl Excel {
         list_session: &HashMap<String, i8>,
     ) -> Result<Vec<Class>> {
         let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1 as usize);
-
-        let days = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
 
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
@@ -109,7 +102,7 @@ impl Excel {
                         None => continue,
                     };
 
-                let day = days[row_idx / 15];
+                let day = DAYS[row_idx / 15];
 
                 let session_id = match self.parse_session(row_idx as u32, &list_session) {
                     Some(val) => val,
