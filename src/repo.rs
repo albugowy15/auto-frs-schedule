@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
-use sqlx::{MySql, Pool, Row};
+use sqlx::{MySql, MySqlPool, Pool, Row};
 
 pub struct ClassRepository;
 
@@ -64,28 +64,35 @@ impl ClassRepository {
         Ok(sessions)
     }
 
-    #[allow(deprecated)]
-    pub async fn insert_data(pool: &Pool<MySql>, data: &Vec<Class>) -> Result<()> {
-        let mut tx = pool.begin().await?;
+    async fn drop_old_classes(transaction: &mut sqlx::Transaction<'_, sqlx::MySql>) -> Result<()> {
         sqlx::query("DELETE FROM Plan")
-            .execute(&mut tx)
+            .execute(&mut **transaction)
             .await
             .with_context(|| "Could not delete all Plan")?;
         sqlx::query("DELETE FROM _ClassToPlan")
-            .execute(&mut tx)
+            .execute(&mut **transaction)
             .await
             .with_context(|| "Could not delete all _ClassToPlan")?;
         sqlx::query("DELETE FROM Class")
-            .execute(&mut tx)
+            .execute(&mut **transaction)
             .await
             .with_context(|| "Could not delete all Class")?;
         sqlx::query("DELETE FROM _ClassToLecturer")
-            .execute(&mut tx)
+            .execute(&mut **transaction)
             .await
             .with_context(|| "Could not delete all _ClassToLecturer")?;
+        Ok(())
+    }
 
-        let prep_class_sql = "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        let prep_class_lecturers_sql = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
+    #[allow(deprecated)]
+    pub async fn insert_classes(pool: &MySqlPool, data: &Vec<Class>) -> Result<()> {
+        let mut tx = pool.begin().await?;
+        Self::drop_old_classes(&mut tx)
+            .await
+            .with_context(|| "Error dropping old classes")?;
+
+        let class_stmt = "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        let class_lecturers_stmt = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
 
         let bar = ProgressBar::new(data.len() as u64);
         bar.set_style(
@@ -100,10 +107,10 @@ impl ClassRepository {
             let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
 
             for lec in item.lecturers_id.iter() {
-                sqlx::query(prep_class_lecturers_sql)
+                sqlx::query(class_lecturers_stmt)
                     .bind(&id_class)
                     .bind(&lec)
-                    .execute(&mut tx)
+                    .execute(&mut *tx)
                     .await
                     .with_context(|| {
                         format!(
@@ -113,7 +120,7 @@ impl ClassRepository {
                     })?;
             }
 
-            sqlx::query(prep_class_sql)
+            sqlx::query(class_stmt)
                 .bind(&id_class)
                 .bind(&item.matkul_id)
                 .bind(&item.day)
@@ -121,7 +128,7 @@ impl ClassRepository {
                 .bind(false)
                 .bind(0)
                 .bind(&item.session_id)
-                .execute(&mut tx)
+                .execute(&mut *tx)
                 .await
                 .with_context(|| {
                     format!("Could not insert to Class table with statement {:?}", &item)
