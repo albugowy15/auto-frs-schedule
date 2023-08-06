@@ -19,12 +19,16 @@ impl ClassRepository {
     pub async fn get_all_subject(pool: &Pool<MySql>) -> Result<HashMap<String, String>> {
         let rows = sqlx::query("SELECT id, name FROM Matkul")
             .fetch_all(pool)
-            .await
-            .with_context(|| "Error executing get_all_subject sql")?;
+            .await?;
 
         let subjects = rows
             .into_iter()
-            .map(|subject| (subject.get("name"), subject.get("id")))
+            .map(|subject| {
+                (
+                    subject.get::<String, _>("name").to_lowercase(),
+                    subject.get("id"),
+                )
+            })
             .collect();
 
         Ok(subjects)
@@ -33,8 +37,7 @@ impl ClassRepository {
     pub async fn get_all_lecture(pool: &Pool<MySql>) -> Result<HashMap<String, String>> {
         let rows = sqlx::query("SELECT id, code FROM Lecturer")
             .fetch_all(pool)
-            .await
-            .with_context(|| "Error executing get_all_lecturer sql")?;
+            .await?;
 
         let lecturers = rows
             .into_iter()
@@ -46,8 +49,7 @@ impl ClassRepository {
     pub async fn get_all_session(pool: &Pool<MySql>) -> Result<HashMap<String, i8>> {
         let rows = sqlx::query("SELECT id, session_time FROM Session")
             .fetch_all(pool)
-            .await
-            .with_context(|| "Error executing get_all_session sql")?;
+            .await?;
         let sessions = rows
             .into_iter()
             .map(|session| {
@@ -67,31 +69,57 @@ impl ClassRepository {
     async fn drop_old_classes(transaction: &mut sqlx::Transaction<'_, sqlx::MySql>) -> Result<()> {
         sqlx::query("DELETE FROM Plan")
             .execute(&mut **transaction)
-            .await
-            .with_context(|| "Could not delete all Plan")?;
+            .await?;
         sqlx::query("DELETE FROM _ClassToPlan")
             .execute(&mut **transaction)
-            .await
-            .with_context(|| "Could not delete all _ClassToPlan")?;
+            .await?;
         sqlx::query("DELETE FROM Class")
             .execute(&mut **transaction)
-            .await
-            .with_context(|| "Could not delete all Class")?;
+            .await?;
         sqlx::query("DELETE FROM _ClassToLecturer")
             .execute(&mut **transaction)
-            .await
-            .with_context(|| "Could not delete all _ClassToLecturer")?;
+            .await?;
         Ok(())
     }
 
+    #[allow(deprecated)]
+    async fn insert_non_classes(
+        transaction: &mut sqlx::Transaction<'_, sqlx::MySql>,
+    ) -> Result<()> {
+        let non_classes = vec![
+            "Tugas Akhir",
+            "Proposal Tugas Akhir",
+            "Kerja Praktik",
+            "Magang",
+        ];
+        let class_stmt = "INSERT INTO Class (id, matkulId, code, taken) VALUES (?, ?, ?, ?)";
+        for item in non_classes.iter() {
+            let res = sqlx::query("SELECT id from Matkul WHERE name = ?")
+                .bind(item)
+                .fetch_one(&mut **transaction)
+                .await
+                .with_context(|| format!("Error find matkul_id for {}", item))?;
+            let matkul_id: &str = res.get("id");
+            let id_class = cuid::cuid()?;
+            sqlx::query(class_stmt)
+                .bind(&id_class)
+                .bind(matkul_id)
+                .bind("-")
+                .bind(0)
+                .execute(&mut **transaction)
+                .await
+                .with_context(|| format!("Error inserting {} {}", id_class, matkul_id))?;
+        }
+        Ok(())
+    }
     #[allow(deprecated)]
     pub async fn insert_classes(pool: &MySqlPool, data: &Vec<Class>) -> Result<()> {
         let mut tx = pool.begin().await?;
         Self::drop_old_classes(&mut tx)
             .await
-            .with_context(|| "Error dropping old classes")?;
+            .with_context(|| "Error drop old classes")?;
 
-        let class_stmt = "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        let class_stmt = "INSERT INTO Class (id, matkulId, day, code, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?)";
         let class_lecturers_stmt = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
 
         let bar = ProgressBar::new(data.len() as u64);
@@ -104,7 +132,7 @@ impl ClassRepository {
         );
 
         for item in data.iter() {
-            let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
+            let id_class = cuid::cuid()?;
 
             for lec in item.lecturers_id.iter() {
                 sqlx::query(class_lecturers_stmt)
@@ -125,7 +153,6 @@ impl ClassRepository {
                 .bind(&item.matkul_id)
                 .bind(&item.day)
                 .bind(&item.code)
-                .bind(false)
                 .bind(0)
                 .bind(&item.session_id)
                 .execute(&mut *tx)
@@ -135,6 +162,7 @@ impl ClassRepository {
                 })?;
             bar.inc(1);
         }
+        Self::insert_non_classes(&mut tx).await?;
         tx.commit().await?;
         bar.finish_with_message(format!(
             "Done inserting {} classes to Class table",
