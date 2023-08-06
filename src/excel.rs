@@ -19,6 +19,7 @@ impl Excel {
             .with_context(|| format!("Could not read excel range from sheet {}", sheet_name))?;
         Ok(Self { range })
     }
+
     fn parse_subject_class(
         val: &str,
         subject_map: &HashMap<String, String>,
@@ -36,11 +37,12 @@ impl Excel {
             } else {
                 (subject_name[0].trim(), subject_name[1].trim())
             };
-        match subject_map.get(subject_valid) {
+        match subject_map.get(&subject_valid.to_lowercase()) {
             Some(val) => Some((val.to_string(), class_code.to_string())),
             None => None,
         }
     }
+
     fn parse_lecturer(
         &self,
         row: u32,
@@ -63,6 +65,7 @@ impl Excel {
             false => Some(lecturers_id),
         }
     }
+
     fn parse_session(&self, row_idx: u32, session_map: &HashMap<String, i8>) -> Option<i8> {
         let session_name = self
             .range
@@ -75,6 +78,7 @@ impl Excel {
             None => None,
         }
     }
+
     pub fn parse_excel(
         &self,
         list_subject: &HashMap<String, String>,
