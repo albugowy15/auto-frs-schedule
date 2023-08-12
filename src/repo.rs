@@ -91,6 +91,7 @@ impl ClassRepository {
             "Proposal Tugas Akhir",
             "Kerja Praktik",
             "Magang",
+            "Etika Profesi",
         ];
         let class_stmt = "INSERT INTO Class (id, matkulId, code, taken) VALUES (?, ?, ?, ?)";
         for item in non_classes.iter() {
@@ -126,8 +127,7 @@ impl ClassRepository {
         bar.set_style(
             ProgressStyle::with_template(
                 "{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len}",
-            )
-            .unwrap()
+            )?
             .progress_chars("#>-"),
         );
 
@@ -162,6 +162,7 @@ impl ClassRepository {
                 })?;
             bar.inc(1);
         }
+        println!("Inserting non-class subject");
         Self::insert_non_classes(&mut tx).await?;
         tx.commit().await?;
         bar.finish_with_message(format!(

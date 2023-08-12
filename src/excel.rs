@@ -145,54 +145,44 @@ impl Excel {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashMap;
-
     use crate::excel::Excel;
+    use std::collections::HashMap;
 
     #[test]
     fn test_parse_subject() {
-        let val = "Jaringan Komputer A";
         let mut subject_map: HashMap<String, String> = HashMap::new();
         subject_map.insert(String::from("jaringan komputer"), String::from("c636gggdd"));
+        assert_eq!(
+            Excel::parse_subject_class("Jaringan Komputer A", &subject_map),
+            Some(("c636gggdd".to_string(), "A".to_string()))
+        );
+
         subject_map.insert(String::from("realitas x"), String::from("377hh7cch"));
+        assert_eq!(
+            Excel::parse_subject_class("Realitas X", &subject_map),
+            Some(("377hh7cch".to_string(), "-".to_string()))
+        );
         subject_map.insert(
             String::from("interaksi manusia komputer"),
             String::from("wjjfhhfw888"),
         );
-        subject_map.insert(String::from("dasar pemrograman"), String::from("cc773hhe"));
-
         assert_eq!(
-            Excel::parse_subject_class(val, &subject_map),
-            Some(("c636gggdd".to_string(), "A".to_string()))
-        );
-
-        let val = "Realitas X";
-        assert_eq!(
-            Excel::parse_subject_class(val, &subject_map),
-            Some(("377hh7cch".to_string(), "-".to_string()))
-        );
-
-        let val = "Interaksi Manusia Komputer D - EN";
-        assert_eq!(
-            Excel::parse_subject_class(val, &subject_map),
+            Excel::parse_subject_class("Interaksi Manusia Komputer D - EN", &subject_map),
             Some(("wjjfhhfw888".to_string(), "D - EN".to_string()))
         );
-
-        let val = "Interaksi Manusia Komputer - RKA";
         assert_eq!(
-            Excel::parse_subject_class(val, &subject_map),
+            Excel::parse_subject_class("Interaksi Manusia Komputer - RKA", &subject_map),
             Some(("wjjfhhfw888".to_string(), "RKA".to_string()))
         );
 
-        let val = "Jaringan Komputer - IUP";
         assert_eq!(
-            Excel::parse_subject_class(val, &subject_map),
+            Excel::parse_subject_class("Jaringan Komputer - IUP", &subject_map),
             Some(("c636gggdd".to_string(), "IUP".to_string()))
         );
 
-        let val = "Dasar Pemrograman F";
+        subject_map.insert(String::from("dasar pemrograman"), String::from("cc773hhe"));
         assert_eq!(
-            Excel::parse_subject_class(val, &subject_map),
+            Excel::parse_subject_class("Dasar Pemrograman F", &subject_map),
             Some(("cc773hhe".to_string(), "F".to_string()))
         );
     }
