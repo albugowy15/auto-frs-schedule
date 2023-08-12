@@ -24,21 +24,32 @@ impl Excel {
         val: &str,
         subject_map: &HashMap<String, String>,
     ) -> Option<(String, String)> {
-        let subject_name = val.split("-").collect::<Vec<&str>>();
-        if subject_name.len() < 2 {
-            return None;
-        }
-        let (subject_valid, class_code) =
-            if subject_name[0].contains("IUP") && subject_name[1].contains("akselerasi") {
-                (
-                    subject_name[0].split("IUP").collect::<Vec<&str>>()[0].trim(),
-                    "IUP akselerasi",
-                )
+        let splitted = val.split("-").collect::<Vec<&str>>();
+        let subject_name: String;
+        let code: String;
+        if splitted.len() < 2 {
+            let split_space = val.split_ascii_whitespace().collect::<Vec<&str>>();
+            let last_str = split_space.last()?.trim();
+            if last_str.len() == 1 && last_str <= "L" {
+                subject_name = split_space[0..(split_space.len() - 1)].join(" ");
+                code = last_str.to_string()
             } else {
-                (subject_name[0].trim(), subject_name[1].trim())
-            };
-        match subject_map.get(&subject_valid.to_lowercase()) {
-            Some(val) => Some((val.to_string(), class_code.to_string())),
+                subject_name = split_space.join(" ");
+                code = "-".to_owned();
+            }
+        } else {
+            let last_split = splitted.last()?.trim();
+            if last_split.contains("EN") {
+                let split_space = splitted[0].split_ascii_whitespace().collect::<Vec<&str>>();
+                subject_name = split_space[0..(split_space.len() - 1)].join(" ");
+                code = format!("{} - {}", split_space.last()?, "EN");
+            } else {
+                subject_name = splitted[0].trim().to_owned();
+                code = splitted[1].trim().to_owned();
+            }
+        }
+        match subject_map.get(&subject_name.to_lowercase()) {
+            Some(val) => Some((val.to_string(), code)),
             None => None,
         }
     }
@@ -57,8 +68,13 @@ impl Excel {
             .collect::<Vec<_>>()[2];
         let lecturers_id: Vec<_> = lecturer
             .split("-")
-            .flat_map(|lecture_code| lecturer_map.get(lecture_code.trim()))
-            .map(String::from)
+            .flat_map(|lecture_code| {
+                let id = match lecturer_map.get(lecture_code.trim()) {
+                    Some(code) => code,
+                    None => lecturer_map.get("UNK").unwrap(),
+                };
+                vec![id.to_string()]
+            })
             .collect();
         match lecturers_id.is_empty() {
             true => None,
@@ -124,5 +140,60 @@ impl Excel {
         }
 
         Ok(list_class)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use crate::excel::Excel;
+
+    #[test]
+    fn test_parse_subject() {
+        let val = "Jaringan Komputer A";
+        let mut subject_map: HashMap<String, String> = HashMap::new();
+        subject_map.insert(String::from("jaringan komputer"), String::from("c636gggdd"));
+        subject_map.insert(String::from("realitas x"), String::from("377hh7cch"));
+        subject_map.insert(
+            String::from("interaksi manusia komputer"),
+            String::from("wjjfhhfw888"),
+        );
+        subject_map.insert(String::from("dasar pemrograman"), String::from("cc773hhe"));
+
+        assert_eq!(
+            Excel::parse_subject_class(val, &subject_map),
+            Some(("c636gggdd".to_string(), "A".to_string()))
+        );
+
+        let val = "Realitas X";
+        assert_eq!(
+            Excel::parse_subject_class(val, &subject_map),
+            Some(("377hh7cch".to_string(), "-".to_string()))
+        );
+
+        let val = "Interaksi Manusia Komputer D - EN";
+        assert_eq!(
+            Excel::parse_subject_class(val, &subject_map),
+            Some(("wjjfhhfw888".to_string(), "D - EN".to_string()))
+        );
+
+        let val = "Interaksi Manusia Komputer - RKA";
+        assert_eq!(
+            Excel::parse_subject_class(val, &subject_map),
+            Some(("wjjfhhfw888".to_string(), "RKA".to_string()))
+        );
+
+        let val = "Jaringan Komputer - IUP";
+        assert_eq!(
+            Excel::parse_subject_class(val, &subject_map),
+            Some(("c636gggdd".to_string(), "IUP".to_string()))
+        );
+
+        let val = "Dasar Pemrograman F";
+        assert_eq!(
+            Excel::parse_subject_class(val, &subject_map),
+            Some(("cc773hhe".to_string(), "F".to_string()))
+        );
     }
 }
