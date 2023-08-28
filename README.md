@@ -3,11 +3,22 @@
 ## Description
 This project is a part of the [Informatics FRS Helper](https://github.com/albugowy15/informatics-frs-helper) project to automatically parse all class schedule from Excel files to MySQL database.
 
+## Supported Commands
+- `update` : Parse all class data from Excel then push it to MySQL database or save it to SQL file.
+- `compare` : Compare class schedule from database with latest Excel file.
+
 ## Supported Arguments
+
+### `update` command
 - `-p --push` : Optional arg to determine wether only to parse excel or also push class to DB
 - `-f --file` : Required arg for path to excel file
 - `-s --sheet` : Required arg for excel sheet name
 - `-o --outdir` : Optional arg to write the sql statement to output directory
+
+### `compare` command
+- `-f --file` : Required arg for path to excel file
+- `-s --sheet` : Required arg for excel sheet name
+- `-o --outdir` : Required arg to write the comparation result to output directory
 
 ## How To Run
 
@@ -47,20 +58,25 @@ This project is a part of the [Informatics FRS Helper](https://github.com/albugo
 
 ## Example
 ```
-auto-frs-schedule --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah"
+auto-frs-schedule update --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah"
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to MySQL database.
 
 
 ```
-auto-frs-schedule -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
+auto-frs-schedule update -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Then, save the output to `result/classes.sql` directory.
 
 ```
-auto-frs-schedule --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
+auto-frs-schedule update --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Push the output to MySQL database and also save the output to `result/classes.sql` directory.
+
+```
+auto-frs-schedule compare -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/changes.txt
+```
+Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Compare it with existing class schedule from DB. Save the output to `result/changes.txt` directory.
 
 ## Libraries
 ### calamine
