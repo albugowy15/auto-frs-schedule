@@ -94,17 +94,16 @@ async fn main() -> Result<()> {
             outdir,
         } => {
             println!("Parse class schedule from Excel");
-            let excel = Excel::new(&file, &sheet).with_context(|| {
-                format!(
-                    "Error opening {} with sheet name '{:?}'",
-                    &file.display(),
-                    &sheet,
-                )
-            })?;
+            let excel =
+                Excel::new(&file, &sheet, subjects, lecturers, sessions).with_context(|| {
+                    format!(
+                        "Error opening {} with sheet name '{:?}'",
+                        &file.display(),
+                        &sheet,
+                    )
+                })?;
 
-            let list_class: Vec<Class> = excel
-                .parse_excel(&subjects, &lecturers, &sessions)
-                .with_context(|| "Error parsing excel")?;
+            let list_class: Vec<Class> = excel.parse_excel();
 
             if *push == true {
                 println!("Insert {} classes to DB", list_class.len());
@@ -122,7 +121,6 @@ async fn main() -> Result<()> {
                     .await
                     .with_context(|| "Error writing output to sql")?;
             }
-            println!("Done");
         }
         Commands::Compare {
             file,
@@ -134,9 +132,21 @@ async fn main() -> Result<()> {
             let mut changed: Vec<(ClassFromSchedule, ClassFromSchedule)> = Vec::new();
 
             let class_repo = ClassRepository::new(&pool);
-            let mut db_classes = class_repo.get_schedule().await?;
-            let excel = Excel::new(&file, &sheet)?;
-            let excel_classes = excel.updated_schedule_to_str(&subjects, &lecturers, &sessions);
+            println!("Get existing schedule from DB");
+            let mut db_classes = class_repo
+                .get_schedule()
+                .await
+                .with_context(|| "Error get schedules from DB")?;
+
+            println!("Get latest schedule from Excel");
+            let excel = Excel::new(&file, &sheet, subjects, lecturers, sessions)
+                .with_context(|| "Error opening excel file")?;
+            let excel_classes = excel.updated_schedule_to_str();
+
+            println!(
+                "Comparing {} classes from Excel with existing schedule",
+                excel_classes.len()
+            );
             for class in excel_classes {
                 let key = (class.subject_name.clone(), class.class_code.clone());
                 match db_classes.get(&key) {
@@ -156,12 +166,22 @@ async fn main() -> Result<()> {
                     deleted.push(val);
                 }
             }
-            let mut out_writer = Writer::new(&outdir).await?;
+            println!(
+                "Detected {} changed, {} added, {} deleted class",
+                changed.len(),
+                added.len(),
+                deleted.len()
+            );
+            println!("Write the result to {:?}", &outdir);
+            let mut out_writer = Writer::new(&outdir)
+                .await
+                .with_context(|| format!("Error creating {:?}", &outdir))?;
             out_writer
                 .write_compare_result(&added, &changed, &deleted)
                 .await
-                .with_context(|| "Error writing output to sql")?;
+                .with_context(|| "Error writing result")?;
         }
     }
+    println!("Done");
     Ok(())
 }
