@@ -2,9 +2,11 @@ use std::collections::HashMap;
 
 use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
-use sqlx::{MySql, MySqlPool, Pool, Row};
+use sqlx::{MySql, Pool, Row};
 
-pub struct ClassRepository;
+pub struct ClassRepository<'a> {
+    db_pool: &'a Pool<MySql>,
+}
 
 #[derive(Debug)]
 pub struct Class {
@@ -15,10 +17,23 @@ pub struct Class {
     pub session_id: i8,
 }
 
-impl ClassRepository {
-    pub async fn get_all_subject(pool: &Pool<MySql>) -> Result<HashMap<String, String>> {
+#[derive(Debug, PartialEq, Clone)]
+pub struct ClassFromSchedule {
+    pub subject_name: String,
+    pub class_code: String,
+    pub lecturer_code: Vec<String>,
+    pub day: String,
+    pub session_start: String,
+}
+
+#[allow(dead_code)]
+impl ClassRepository<'_> {
+    pub fn new(db_pool: &Pool<MySql>) -> ClassRepository {
+        ClassRepository { db_pool }
+    }
+    pub async fn get_all_subject(&self) -> Result<HashMap<String, String>> {
         let rows = sqlx::query("SELECT id, name FROM Matkul")
-            .fetch_all(pool)
+            .fetch_all(self.db_pool)
             .await?;
 
         let subjects = rows
@@ -34,9 +49,9 @@ impl ClassRepository {
         Ok(subjects)
     }
 
-    pub async fn get_all_lecture(pool: &Pool<MySql>) -> Result<HashMap<String, String>> {
+    pub async fn get_all_lecture(&self) -> Result<HashMap<String, String>> {
         let rows = sqlx::query("SELECT id, code FROM Lecturer")
-            .fetch_all(pool)
+            .fetch_all(self.db_pool)
             .await?;
 
         let lecturers = rows
@@ -46,9 +61,9 @@ impl ClassRepository {
         Ok(lecturers)
     }
 
-    pub async fn get_all_session(pool: &Pool<MySql>) -> Result<HashMap<String, i8>> {
+    pub async fn get_all_session(&self) -> Result<HashMap<String, i8>> {
         let rows = sqlx::query("SELECT id, session_time FROM Session")
-            .fetch_all(pool)
+            .fetch_all(self.db_pool)
             .await?;
         let sessions = rows
             .into_iter()
@@ -113,9 +128,10 @@ impl ClassRepository {
         }
         Ok(())
     }
+
     #[allow(deprecated)]
-    pub async fn insert_classes(pool: &MySqlPool, data: &Vec<Class>) -> Result<()> {
-        let mut tx = pool.begin().await?;
+    pub async fn insert_classes(&self, data: &Vec<Class>) -> Result<()> {
+        let mut tx = self.db_pool.begin().await?;
         Self::drop_old_classes(&mut tx)
             .await
             .with_context(|| "Error drop old classes")?;
@@ -162,13 +178,54 @@ impl ClassRepository {
                 })?;
             bar.inc(1);
         }
-        println!("Inserting non-class subject");
-        Self::insert_non_classes(&mut tx).await?;
-        tx.commit().await?;
         bar.finish_with_message(format!(
             "Done inserting {} classes to Class table",
             data.len()
         ));
+        println!("Inserting non-class subject");
+        Self::insert_non_classes(&mut tx).await?;
+        tx.commit().await?;
         Ok(())
+    }
+
+    pub async fn get_schedule(&self) -> Result<HashMap<(String, String), ClassFromSchedule>> {
+        // run a query, returning data that contains subject name, class code, lecturer code, day, and session start
+        let rows = sqlx::query(
+            "SELECT c.id, m.name as subject_name, c.code as class_code, c.day, l.code as lecture_code, cls.total_lecturer, s.session_time FROM Class c INNER JOIN (SELECT c.id, COUNT(c.id) as total_lecturer  FROM Class c INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id GROUP BY (c.id)) cls ON cls.id = c.id INNER JOIN Matkul m ON c.matkulId = m.id INNER JOIN Session s on s.id = c.sessionId INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id;",
+        )
+        .fetch_all(self.db_pool)
+        .await?;
+
+        // store it inside a hashmap with (subject name, class code) as key, and {lecturer code, day, and session start as value}
+
+        let mut class_map = HashMap::new();
+        for row in rows.into_iter() {
+            let total_lecturer = row.get::<i32, _>("total_lecturer");
+            let lecturer_code: Vec<String> = if total_lecturer > 1 {
+                let class_id: String = row.get("id");
+                // get all lecturer code
+                let lec_rows = sqlx::query("SELECT l.code FROM Lecturer l INNER JOIN `_ClassToLecturer` ctl ON l.id = ctl.B INNER JOIN Class c ON ctl.A = c.id WHERE c.id = ?").bind(class_id).fetch_all(self.db_pool).await?;
+                lec_rows
+                    .into_iter()
+                    .map(|row| row.get("code"))
+                    .collect::<Vec<String>>()
+            } else {
+                vec![row.get("lecture_code")]
+            };
+            let key: (String, String) = (row.get("subject_name"), row.get("class_code"));
+            let session_start: String = row.get("session_time");
+            let value = ClassFromSchedule {
+                class_code: row.get("class_code"),
+                day: row.get("day"),
+                lecturer_code,
+                session_start: session_start.split("-").collect::<Vec<&str>>()[0]
+                    .trim()
+                    .to_string(),
+                subject_name: row.get("subject_name"),
+            };
+            class_map.insert(key, value);
+        }
+
+        Ok(class_map)
     }
 }
