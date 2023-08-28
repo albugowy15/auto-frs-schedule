@@ -2,5 +2,6 @@
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "rust-lang.rust-analyzer",
   "editor.tabSize": 4,
-  "editor.wordWrap": "wordWrapColumn"
+  "editor.wordWrap": "wordWrapColumn",
+  "rust-analyzer.showUnlinkedFileNotification": false
 }
