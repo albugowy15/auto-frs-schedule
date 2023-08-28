@@ -189,21 +189,17 @@ impl ClassRepository<'_> {
     }
 
     pub async fn get_schedule(&self) -> Result<HashMap<(String, String), ClassFromSchedule>> {
-        // run a query, returning data that contains subject name, class code, lecturer code, day, and session start
         let rows = sqlx::query(
             "SELECT c.id, m.name as subject_name, c.code as class_code, c.day, l.code as lecture_code, cls.total_lecturer, s.session_time FROM Class c INNER JOIN (SELECT c.id, COUNT(c.id) as total_lecturer  FROM Class c INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id GROUP BY (c.id)) cls ON cls.id = c.id INNER JOIN Matkul m ON c.matkulId = m.id INNER JOIN Session s on s.id = c.sessionId INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id;",
         )
         .fetch_all(self.db_pool)
         .await?;
 
-        // store it inside a hashmap with (subject name, class code) as key, and {lecturer code, day, and session start as value}
-
         let mut class_map = HashMap::new();
         for row in rows.into_iter() {
             let total_lecturer = row.get::<i32, _>("total_lecturer");
             let lecturer_code: Vec<String> = if total_lecturer > 1 {
                 let class_id: String = row.get("id");
-                // get all lecturer code
                 let lec_rows = sqlx::query("SELECT l.code FROM Lecturer l INNER JOIN `_ClassToLecturer` ctl ON l.id = ctl.B INNER JOIN Class c ON ctl.A = c.id WHERE c.id = ?").bind(class_id).fetch_all(self.db_pool).await?;
                 lec_rows
                     .into_iter()

@@ -66,7 +66,7 @@ impl Writer {
             self.write(query).await?;
         }
 
-        let changed_header = format!("--- CHANGED ---\n");
+        let changed_header = format!("\n\n--- CHANGED ---\n");
         self.write(changed_header).await?;
         for class in changed {
             let query = format!(
@@ -89,7 +89,7 @@ impl Writer {
             self.write(query).await?;
         }
 
-        let deleted_header = format!("--- DELETED ---\n");
+        let deleted_header = format!("\n\n--- DELETED ---\n");
         self.write(deleted_header).await?;
         for class in deleted {
             let query = format!(
