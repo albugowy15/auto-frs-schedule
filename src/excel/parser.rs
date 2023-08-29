@@ -23,7 +23,7 @@ impl Parser for Excel {
         Some(session_name)
     }
 
-    fn parse_subject_with_code(&self, val: &str) -> Option<(String, String)> {
+    fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
         let splitted = val.split("-").collect::<Vec<&str>>();
         let subject_name: String;
         let code: String;
@@ -50,5 +50,43 @@ impl Parser for Excel {
         }
 
         Some((subject_name, code))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::excel::{Excel, Parser};
+
+    #[test]
+    fn test_parse_subject() {
+        assert_eq!(
+            Excel::parse_subject_with_code("Jaringan Komputer A"),
+            Some(("Jaringan Komputer".to_string(), "A".to_string()))
+        );
+
+        assert_eq!(
+            Excel::parse_subject_with_code("Realitas X"),
+            Some(("Realitas X".to_string(), "-".to_string()))
+        );
+        assert_eq!(
+            Excel::parse_subject_with_code("Interaksi Manusia Komputer D - EN"),
+            Some((
+                "Interaksi Manusia Komputer".to_string(),
+                "D - EN".to_string()
+            ))
+        );
+        assert_eq!(
+            Excel::parse_subject_with_code("Interaksi Manusia Komputer - RKA"),
+            Some(("Interaksi Manusia Komputer".to_string(), "RKA".to_string()))
+        );
+
+        assert_eq!(
+            Excel::parse_subject_with_code("Jaringan Komputer - IUP"),
+            Some(("Jaringan Komputer".to_string(), "IUP".to_string()))
+        );
+        assert_eq!(
+            Excel::parse_subject_with_code("Dasar Pemrograman F"),
+            Some(("Dasar Pemrograman".to_string(), "F".to_string()))
+        );
     }
 }

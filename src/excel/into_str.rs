@@ -4,7 +4,7 @@ use super::{Excel, IntoStr, Parser, DAYS};
 
 impl IntoStr for Excel {
     fn subject_with_code_to_str(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = self.parse_subject_with_code(val)?;
+        let (subject_name, code) = Self::parse_subject_with_code(val)?;
         match self.list_subject.contains_key(&subject_name.to_lowercase()) {
             true => Some((subject_name, code)),
             false => None,

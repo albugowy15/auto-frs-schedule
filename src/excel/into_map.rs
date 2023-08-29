@@ -4,7 +4,7 @@ use super::{Excel, IntoMap, Parser, DAYS};
 
 impl IntoMap for Excel {
     fn subject_with_code_to_map(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = self.parse_subject_with_code(val)?;
+        let (subject_name, code) = Self::parse_subject_with_code(val)?;
         match self.list_subject.get(&subject_name.to_lowercase()) {
             Some(val) => Some((val.to_string(), code)),
             None => None,

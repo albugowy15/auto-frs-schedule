@@ -1,7 +1,7 @@
 mod db;
 mod excel;
+mod file;
 mod repo;
-mod util;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -11,8 +11,8 @@ use std::path::PathBuf;
 use crate::{
     db::Connection,
     excel::{Excel, IntoMap, IntoStr},
+    file::Writer,
     repo::{Class, ClassFromSchedule, ClassRepository},
-    util::file::Writer,
 };
 
 #[derive(Parser)]
