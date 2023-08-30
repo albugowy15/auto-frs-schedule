@@ -22,6 +22,7 @@ pub trait Parser {
     fn parse_subject_with_code(val: &str) -> Option<(String, String)>;
     fn parse_lecturer(&self, row: u32, col: u32) -> Option<Vec<&str>>;
     fn parse_session(&self, row_idx: u32) -> Option<String>;
+    fn parse_subject_with_code_2(val: &str) -> Option<(String, String)>;
 }
 
 pub trait GetScheduleUpdate {

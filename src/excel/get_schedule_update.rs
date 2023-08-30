@@ -4,7 +4,7 @@ use super::{Excel, GetScheduleUpdate, Parser, DAYS};
 
 impl GetScheduleUpdate for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = Self::parse_subject_with_code(val)?;
+        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
         match self
             .subject_to_id
             .contains_key(&subject_name.to_lowercase())

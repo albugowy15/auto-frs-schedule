@@ -4,7 +4,7 @@ use super::{Excel, GetSchedule, Parser, DAYS};
 
 impl GetSchedule for Excel {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = Self::parse_subject_with_code(val)?;
+        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
         match self.subject_to_id.get(&subject_name.to_lowercase()) {
             Some(val) => Some((val.to_string(), code)),
             None => None,
