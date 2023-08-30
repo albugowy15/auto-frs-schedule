@@ -10,8 +10,8 @@ use std::path::PathBuf;
 
 use crate::{
     db::Connection,
-    excel::{Excel, IntoMap, IntoStr},
-    file::Writer,
+    excel::{Excel, GetSchedule, GetScheduleUpdate},
+    file::OutWriter,
     repo::{Class, ClassFromSchedule, ClassRepository},
 };
 
@@ -103,7 +103,7 @@ async fn main() -> Result<()> {
                     )
                 })?;
 
-            let list_class: Vec<Class> = excel.parse_excel();
+            let list_class: Vec<Class> = excel.get_schedule();
 
             if *push == true {
                 println!("Insert {} classes to DB", list_class.len());
@@ -115,7 +115,7 @@ async fn main() -> Result<()> {
 
             if let Some(path_output) = &outdir {
                 println!("Write {} classes to out directory", list_class.len());
-                let mut outfile = Writer::new(path_output).await?;
+                let mut outfile = OutWriter::new(path_output).await?;
                 outfile
                     .write_output(&list_class)
                     .await
@@ -141,7 +141,7 @@ async fn main() -> Result<()> {
             println!("Get latest schedule from Excel");
             let excel = Excel::new(&file, &sheet, subjects, lecturers, sessions)
                 .with_context(|| "Error opening excel file")?;
-            let excel_classes = excel.updated_schedule_to_str();
+            let excel_classes = excel.get_updated_schedule();
 
             println!(
                 "Comparing {} classes from Excel with existing schedule",
@@ -173,7 +173,7 @@ async fn main() -> Result<()> {
                 deleted.len()
             );
             println!("Write the result to {:?}", &outdir);
-            let mut out_writer = Writer::new(&outdir)
+            let mut out_writer = OutWriter::new(&outdir)
                 .await
                 .with_context(|| format!("Error creating {:?}", &outdir))?;
             out_writer

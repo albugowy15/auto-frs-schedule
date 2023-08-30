@@ -12,6 +12,7 @@ impl Parser for Excel {
             .collect();
         Some(lecturer)
     }
+
     fn parse_session(&self, row_idx: u32) -> Option<String> {
         let session_name = self
             .range

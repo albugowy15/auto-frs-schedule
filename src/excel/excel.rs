@@ -9,9 +9,9 @@ impl Excel {
     pub fn new(
         file_path: &PathBuf,
         sheet_name: &str,
-        list_subject: HashMap<String, String>,
-        list_lecture: HashMap<String, String>,
-        list_session: HashMap<String, i8>,
+        subject_to_id: HashMap<String, String>,
+        lecturer_to_id: HashMap<String, String>,
+        session_to_id: HashMap<String, i8>,
     ) -> Result<Self> {
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| "Cannot open excel file")?;
@@ -21,9 +21,9 @@ impl Excel {
             .with_context(|| format!("Could not read excel range from sheet {}", sheet_name))?;
         Ok(Self {
             range,
-            list_lecture,
-            list_session,
-            list_subject,
+            subject_to_id,
+            lecturer_to_id,
+            session_to_id,
         })
     }
 }

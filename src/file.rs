@@ -7,14 +7,14 @@ use crate::repo::{Class, ClassFromSchedule};
 
 enum CompareVecResult<'a> {
     DBAndExcel(&'a Vec<(ClassFromSchedule, ClassFromSchedule)>),
-    Exce(&'a Vec<ClassFromSchedule>),
+    Excel(&'a Vec<ClassFromSchedule>),
 }
 
-pub struct Writer {
+pub struct OutWriter {
     file: File,
 }
 
-impl Writer {
+impl OutWriter {
     pub async fn new(out_path: &PathBuf) -> Result<Self> {
         let outfile = File::create(out_path.as_path()).await?;
         Ok(Self { file: outfile })
@@ -59,7 +59,7 @@ impl Writer {
                     self.write(query).await?;
                 }
             }
-            CompareVecResult::Exce(data) => {
+            CompareVecResult::Excel(data) => {
                 for class in data.into_iter() {
                     let query = format!(
                         "{} {}, {} {}, {:?}\n",
@@ -101,15 +101,12 @@ impl Writer {
         changed: &Vec<(ClassFromSchedule, ClassFromSchedule)>,
         deleted: &Vec<ClassFromSchedule>,
     ) -> Result<()> {
-        self.write_change("ADDED", &CompareVecResult::Exce(&added))
+        self.write_change("ADDED", &CompareVecResult::Excel(&added))
             .await?;
-
-        self.write_change("CHANGED", &&CompareVecResult::DBAndExcel(&changed))
+        self.write_change("CHANGED", &CompareVecResult::DBAndExcel(&changed))
             .await?;
-
-        self.write_change("DELETED", &CompareVecResult::Exce(&deleted))
+        self.write_change("DELETED", &CompareVecResult::Excel(&deleted))
             .await?;
-
         Ok(())
     }
 }

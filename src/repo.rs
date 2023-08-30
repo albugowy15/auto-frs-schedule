@@ -31,6 +31,7 @@ impl ClassRepository<'_> {
     pub fn new(db_pool: &Pool<MySql>) -> ClassRepository {
         ClassRepository { db_pool }
     }
+
     pub async fn get_all_subject(&self) -> Result<HashMap<String, String>> {
         let rows = sqlx::query("SELECT id, name FROM Matkul")
             .fetch_all(self.db_pool)
@@ -53,7 +54,6 @@ impl ClassRepository<'_> {
         let rows = sqlx::query("SELECT id, code FROM Lecturer")
             .fetch_all(self.db_pool)
             .await?;
-
         let lecturers = rows
             .into_iter()
             .map(|lecturer| (lecturer.get("code"), lecturer.get("id")))
@@ -138,7 +138,6 @@ impl ClassRepository<'_> {
 
         let class_stmt = "INSERT INTO Class (id, matkulId, day, code, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?)";
         let class_lecturers_stmt = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
-
         let bar = ProgressBar::new(data.len() as u64);
         bar.set_style(
             ProgressStyle::with_template(
@@ -146,7 +145,6 @@ impl ClassRepository<'_> {
             )?
             .progress_chars("#>-"),
         );
-
         for item in data.iter() {
             let id_class = cuid::cuid()?;
 
@@ -163,7 +161,6 @@ impl ClassRepository<'_> {
                         )
                     })?;
             }
-
             sqlx::query(class_stmt)
                 .bind(&id_class)
                 .bind(&item.matkul_id)
@@ -221,7 +218,6 @@ impl ClassRepository<'_> {
             };
             class_map.insert(key, value);
         }
-
         Ok(class_map)
     }
 }

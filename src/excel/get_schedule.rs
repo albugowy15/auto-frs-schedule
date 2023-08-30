@@ -1,32 +1,32 @@
 use crate::repo::Class;
 
-use super::{Excel, IntoMap, Parser, DAYS};
+use super::{Excel, GetSchedule, Parser, DAYS};
 
-impl IntoMap for Excel {
-    fn subject_with_code_to_map(&self, val: &str) -> Option<(String, String)> {
+impl GetSchedule for Excel {
+    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
         let (subject_name, code) = Self::parse_subject_with_code(val)?;
-        match self.list_subject.get(&subject_name.to_lowercase()) {
+        match self.subject_to_id.get(&subject_name.to_lowercase()) {
             Some(val) => Some((val.to_string(), code)),
             None => None,
         }
     }
 
-    fn session_to_map(&self, row_idx: u32) -> Option<i8> {
+    fn get_session_id(&self, row_idx: u32) -> Option<i8> {
         let session_name = self.parse_session(row_idx)?;
-        match self.list_session.get(&session_name) {
+        match self.session_to_id.get(&session_name) {
             Some(val) => Some(*val),
             None => None,
         }
     }
 
-    fn lecturer_to_map(&self, row: u32, col: u32) -> Option<Vec<String>> {
+    fn get_lecturer_ids(&self, row: u32, col: u32) -> Option<Vec<String>> {
         let lecturers = self.parse_lecturer(row, col)?;
         let lecturers_id: Vec<String> = lecturers
             .into_iter()
             .flat_map(|lecture_code| {
-                let id = match self.list_lecture.get(lecture_code.trim()) {
+                let id = match self.lecturer_to_id.get(lecture_code.trim()) {
                     Some(code) => code,
-                    None => self.list_lecture.get("UNK").unwrap(),
+                    None => self.lecturer_to_id.get("UNK").unwrap(),
                 };
                 vec![id.to_string()]
             })
@@ -38,7 +38,7 @@ impl IntoMap for Excel {
         }
     }
 
-    fn parse_excel(&self) -> Vec<Class> {
+    fn get_schedule(&self) -> Vec<Class> {
         let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1 as usize);
 
         for (row_idx, row) in self.range.rows().enumerate() {
@@ -47,16 +47,16 @@ impl IntoMap for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                let (subject_id, class_code) = match self.subject_with_code_to_map(&val) {
+                let (subject_id, class_code) = match self.get_subject_id_with_code(&val) {
                     Some(val) => val,
                     None => continue,
                 };
-                let lecturers_id = match self.lecturer_to_map(row_idx as u32, col_idx as u32) {
+                let lecturers_id = match self.get_lecturer_ids(row_idx as u32, col_idx as u32) {
                     Some(val) => val,
                     None => continue,
                 };
                 let day = DAYS[row_idx / 14];
-                let session_id = match self.session_to_map(row_idx as u32) {
+                let session_id = match self.get_session_id(row_idx as u32) {
                     Some(val) => val,
                     None => continue,
                 };

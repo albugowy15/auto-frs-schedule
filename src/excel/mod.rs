@@ -5,17 +5,17 @@ use calamine::{DataType, Range};
 use crate::repo::{Class, ClassFromSchedule};
 
 pub mod excel;
-pub mod into_map;
-pub mod into_str;
+pub mod get_schedule;
+pub mod get_schedule_update;
 pub mod parser;
 
 pub const DAYS: [&str; 5] = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
 
 pub struct Excel {
     range: Range<DataType>,
-    list_subject: HashMap<String, String>,
-    list_lecture: HashMap<String, String>,
-    list_session: HashMap<String, i8>,
+    subject_to_id: HashMap<String, String>,
+    lecturer_to_id: HashMap<String, String>,
+    session_to_id: HashMap<String, i8>,
 }
 
 pub trait Parser {
@@ -24,16 +24,16 @@ pub trait Parser {
     fn parse_session(&self, row_idx: u32) -> Option<String>;
 }
 
-pub trait IntoStr {
-    fn subject_with_code_to_str(&self, val: &str) -> Option<(String, String)>;
-    fn lecturer_to_str(&self, row: u32, col: u32) -> Option<Vec<String>>;
-    fn session_to_str(&self, row_idx: u32) -> Option<String>;
-    fn updated_schedule_to_str(&self) -> Vec<ClassFromSchedule>;
+pub trait GetScheduleUpdate {
+    fn get_subject_with_code(&self, val: &str) -> Option<(String, String)>;
+    fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>>;
+    fn get_session(&self, row_idx: u32) -> Option<String>;
+    fn get_updated_schedule(&self) -> Vec<ClassFromSchedule>;
 }
 
-pub trait IntoMap {
-    fn subject_with_code_to_map(&self, val: &str) -> Option<(String, String)>;
-    fn lecturer_to_map(&self, row: u32, col: u32) -> Option<Vec<String>>;
-    fn session_to_map(&self, row_idx: u32) -> Option<i8>;
-    fn parse_excel(&self) -> Vec<Class>;
+pub trait GetSchedule {
+    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)>;
+    fn get_lecturer_ids(&self, row: u32, col: u32) -> Option<Vec<String>>;
+    fn get_session_id(&self, row_idx: u32) -> Option<i8>;
+    fn get_schedule(&self) -> Vec<Class>;
 }
