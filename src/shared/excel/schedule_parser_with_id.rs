@@ -1,6 +1,5 @@
-use crate::shared::repo::ClassFromSchedule;
-
 use super::{AsStringParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
+use crate::shared::repo::ClassFromSchedule;
 
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {

@@ -1,6 +1,5 @@
-use crate::shared::repo::Class;
-
 use super::{AsIdParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
+use crate::shared::repo::Class;
 
 impl AsIdParser for Excel {
     fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>> {

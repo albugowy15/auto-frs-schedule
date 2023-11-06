@@ -1,5 +1,4 @@
 mod commands;
-
 mod shared;
 
 use anyhow::{Context, Result};

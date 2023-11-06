@@ -1,6 +1,8 @@
 use std::collections::HashMap;
+use std::path::PathBuf;
 
-use calamine::{DataType, Range};
+use anyhow::{Context, Result};
+use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
 
 pub mod parser;
 pub mod schedule_parser;
@@ -14,11 +16,6 @@ pub struct Excel {
     lecturer_to_id: HashMap<String, String>,
     session_to_id: HashMap<String, i8>,
 }
-
-use std::path::PathBuf;
-
-use anyhow::{Context, Result};
-use calamine::{open_workbook, Reader, Xlsx};
 
 impl Excel {
     pub fn new(
@@ -50,17 +47,17 @@ pub trait Parser {
     fn parse_subject_with_code_2(val: &str) -> Option<(String, String)>;
 }
 
-pub trait AsIdParser {
+trait AsIdParser {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)>;
     fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>>;
 }
 
-pub trait AsStringParser {
+trait AsStringParser {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)>;
     fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>>;
 }
 
-pub trait SessionParser<T> {
+trait SessionParser<T> {
     fn get_session(&self, row_idx: u32) -> Option<T>;
 }
 

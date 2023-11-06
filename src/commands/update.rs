@@ -1,11 +1,12 @@
 use std::{collections::HashMap, path::PathBuf};
 
+use anyhow::{Context, Result};
+
 use crate::shared::{
     excel::{Excel, ScheduleParser},
     file::OutWriter,
     repo::{Class, ClassRepository},
 };
-use anyhow::{Context, Result};
 
 pub async fn update_handler(
     push: &bool,
