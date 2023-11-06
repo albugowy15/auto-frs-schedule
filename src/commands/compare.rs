@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use sqlx::{MySql, Pool};
 
 use crate::shared::{
-    excel::{Excel, GetScheduleUpdate},
+    excel::{Excel, ScheduleParser},
     file::OutWriter,
     repo::{ClassFromSchedule, ClassRepository},
 };
@@ -34,7 +34,7 @@ pub async fn compare_handler(
     println!("Get latest schedule from Excel");
     let excel = Excel::new(&file, &sheet, repo_data.0, repo_data.1, repo_data.2)
         .with_context(|| "Error opening excel file")?;
-    let excel_classes = excel.get_updated_schedule();
+    let excel_classes: Vec<ClassFromSchedule> = excel.get_schedule();
 
     println!(
         "Comparing {} classes from Excel with existing schedule",

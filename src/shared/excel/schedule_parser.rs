@@ -1,25 +1,9 @@
 use crate::shared::repo::Class;
 
-use super::{Excel, GetSchedule, Parser, DAYS};
+use super::{AsIdParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
 
-impl GetSchedule for Excel {
-    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
-        match self.subject_to_id.get(&subject_name.to_lowercase()) {
-            Some(val) => Some((val.to_string(), code)),
-            None => None,
-        }
-    }
-
-    fn get_session_id(&self, row_idx: u32) -> Option<i8> {
-        let session_name = self.parse_session(row_idx)?;
-        match self.session_to_id.get(&session_name) {
-            Some(val) => Some(*val),
-            None => None,
-        }
-    }
-
-    fn get_lecturer_ids(&self, row: u32, col: u32) -> Option<Vec<String>> {
+impl AsIdParser for Excel {
+    fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>> {
         let lecturers = self.parse_lecturer(row, col)?;
         let lecturers_id: Vec<String> = lecturers
             .into_iter()
@@ -37,7 +21,26 @@ impl GetSchedule for Excel {
             false => Some(lecturers_id),
         }
     }
+    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
+        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
+        match self.subject_to_id.get(&subject_name.to_lowercase()) {
+            Some(val) => Some((val.to_string(), code)),
+            None => None,
+        }
+    }
+}
 
+impl SessionParser<i8> for Excel {
+    fn get_session(&self, row_idx: u32) -> Option<i8> {
+        let session_name = self.parse_session(row_idx)?;
+        match self.session_to_id.get(&session_name) {
+            Some(val) => Some(*val),
+            None => None,
+        }
+    }
+}
+
+impl ScheduleParser<Class> for Excel {
     fn get_schedule(&self) -> Vec<Class> {
         let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1 as usize);
 
@@ -51,12 +54,12 @@ impl GetSchedule for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                let lecturers_id = match self.get_lecturer_ids(row_idx as u32, col_idx as u32) {
+                let lecturers_id = match self.get_lecturer_id(row_idx as u32, col_idx as u32) {
                     Some(val) => val,
                     None => continue,
                 };
                 let day = DAYS[row_idx / 14];
-                let session_id = match self.get_session_id(row_idx as u32) {
+                let session_id = match self.get_session(row_idx as u32) {
                     Some(val) => val,
                     None => continue,
                 };

@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use calamine::{DataType, Range};
 
-pub mod get_schedule;
-pub mod get_schedule_update;
 pub mod parser;
+pub mod schedule_parser;
+pub mod schedule_parser_with_id;
 
 pub const DAYS: [&str; 5] = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
 
@@ -19,8 +19,6 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use calamine::{open_workbook, Reader, Xlsx};
-
-use super::repo::{Class, ClassFromSchedule};
 
 impl Excel {
     pub fn new(
@@ -52,16 +50,20 @@ pub trait Parser {
     fn parse_subject_with_code_2(val: &str) -> Option<(String, String)>;
 }
 
-pub trait GetScheduleUpdate {
-    fn get_subject_with_code(&self, val: &str) -> Option<(String, String)>;
-    fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>>;
-    fn get_session(&self, row_idx: u32) -> Option<String>;
-    fn get_updated_schedule(&self) -> Vec<ClassFromSchedule>;
+pub trait AsIdParser {
+    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)>;
+    fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>>;
 }
 
-pub trait GetSchedule {
-    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)>;
-    fn get_lecturer_ids(&self, row: u32, col: u32) -> Option<Vec<String>>;
-    fn get_session_id(&self, row_idx: u32) -> Option<i8>;
-    fn get_schedule(&self) -> Vec<Class>;
+pub trait AsStringParser {
+    fn get_subject_with_code(&self, val: &str) -> Option<(String, String)>;
+    fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>>;
+}
+
+pub trait SessionParser<T> {
+    fn get_session(&self, row_idx: u32) -> Option<T>;
+}
+
+pub trait ScheduleParser<T> {
+    fn get_schedule(&self) -> Vec<T>;
 }

@@ -1,8 +1,8 @@
 use crate::shared::repo::ClassFromSchedule;
 
-use super::{Excel, GetScheduleUpdate, Parser, DAYS};
+use super::{AsStringParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
 
-impl GetScheduleUpdate for Excel {
+impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
         let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
         match self
@@ -32,7 +32,9 @@ impl GetScheduleUpdate for Excel {
             false => Some(lecturers_code),
         }
     }
+}
 
+impl SessionParser<String> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<String> {
         let session_name = self.parse_session(row_idx)?;
         match self.session_to_id.contains_key(&session_name) {
@@ -40,8 +42,10 @@ impl GetScheduleUpdate for Excel {
             false => None,
         }
     }
+}
 
-    fn get_updated_schedule(&self) -> Vec<ClassFromSchedule> {
+impl ScheduleParser<ClassFromSchedule> for Excel {
+    fn get_schedule(&self) -> Vec<ClassFromSchedule> {
         let mut list_class: Vec<ClassFromSchedule> =
             Vec::with_capacity(self.range.get_size().1 as usize);
         for (row_idx, row) in self.range.rows().enumerate() {

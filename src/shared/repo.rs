@@ -26,7 +26,6 @@ pub struct ClassFromSchedule {
     pub session_start: String,
 }
 
-#[allow(dead_code)]
 impl ClassRepository<'_> {
     pub fn new(db_pool: &Pool<MySql>) -> ClassRepository {
         ClassRepository { db_pool }

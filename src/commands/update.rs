@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::shared::{
-    excel::{Excel, GetSchedule},
+    excel::{Excel, ScheduleParser},
     file::OutWriter,
     repo::{Class, ClassRepository},
 };
