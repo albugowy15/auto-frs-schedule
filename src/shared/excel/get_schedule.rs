@@ -1,4 +1,4 @@
-use crate::repo::Class;
+use crate::shared::repo::Class;
 
 use super::{Excel, GetSchedule, Parser, DAYS};
 

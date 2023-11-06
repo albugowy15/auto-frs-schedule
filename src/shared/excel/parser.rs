@@ -113,7 +113,7 @@ impl Parser for Excel {
 
 #[cfg(test)]
 mod test {
-    use crate::excel::{Excel, Parser};
+    use crate::shared::excel::{Excel, Parser};
 
     #[test]
     fn test_parse_en_iup_class() {
