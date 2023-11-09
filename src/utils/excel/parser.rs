@@ -6,9 +6,9 @@ impl Parser for Excel {
             .range
             .get_value((row + 1, col))?
             .get_string()?
-            .split("/")
+            .split('/')
             .collect::<Vec<_>>()[2]
-            .split("-")
+            .split('-')
             .collect();
         Some(lecturer)
     }
@@ -36,7 +36,7 @@ impl Parser for Excel {
 
         // CASE 2: IUP
         if val.contains("IUP") {
-            let subject = val.split("IUP").nth(0)?.trim().split("-").nth(0)?.trim();
+            let subject = val.split("IUP").nth(0)?.trim().split('-').nth(0)?.trim();
             // let subject = splitted[0..splitted.len() - 1].join(" ");
             return Some((subject.to_string(), "IUP".to_string()));
         }
@@ -47,7 +47,7 @@ impl Parser for Excel {
                 .split("EN")
                 .nth(0)?
                 .trim()
-                .split("-")
+                .split('-')
                 .nth(0)?
                 .split_ascii_whitespace()
                 .collect();
@@ -57,8 +57,8 @@ impl Parser for Excel {
         }
 
         // CASE 4: - RKA, - RPL
-        if val.contains("-") {
-            let splitted: Vec<&str> = val.split("-").map(|x| x.trim()).collect();
+        if val.contains('-') {
+            let splitted: Vec<&str> = val.split('-').map(|x| x.trim()).collect();
             return Some((splitted[0].to_string(), splitted[1].to_string()));
         }
 
@@ -82,7 +82,7 @@ impl Parser for Excel {
     }
 
     fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
-        let splitted = val.split("-").collect::<Vec<&str>>();
+        let splitted = val.split('-').collect::<Vec<&str>>();
         let subject_name: String;
         let code: String;
         if splitted.len() < 2 {
@@ -117,77 +117,68 @@ mod tests {
 
     #[test]
     fn test_parse_subject_with_code_2() {
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Interaksi Manusia Komputer (EN) + IUP"),
-            Some((
-                "Interaksi Manusia Komputer".to_string(),
-                "(EN) + IUP".to_string()
-            ))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Interaksi Manusia Komputer D - EN"),
-            Some((
-                "Interaksi Manusia Komputer".to_string(),
-                "D - EN".to_string()
-            ))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Interaksi Manusia Komputer D -EN"),
-            Some((
-                "Interaksi Manusia Komputer".to_string(),
-                "D - EN".to_string()
-            ))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Interaksi Manusia Komputer D-EN"),
-            Some((
-                "Interaksi Manusia Komputer".to_string(),
-                "D - EN".to_string()
-            ))
-        );
-
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Jaringan Komputer -IUP"),
-            Some(("Jaringan Komputer".to_string(), "IUP".to_string()))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Jaringan Komputer-IUP"),
-            Some(("Jaringan Komputer".to_string(), "IUP".to_string()))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Jaringan Komputer - IUP"),
-            Some(("Jaringan Komputer".to_string(), "IUP".to_string()))
-        );
-
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Interaksi Manusia Komputer - RKA"),
-            Some(("Interaksi Manusia Komputer".to_string(), "RKA".to_string()))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Interaksi Manusia Komputer - RPL"),
-            Some(("Interaksi Manusia Komputer".to_string(), "RPL".to_string()))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Dasar Pemrograman -RPL"),
-            Some(("Dasar Pemrograman".to_string(), "RPL".to_string()))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Dasar Pemrograman-RPL"),
-            Some(("Dasar Pemrograman".to_string(), "RPL".to_string()))
-        );
-
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Game Cerdas"),
-            Some(("Game Cerdas".to_string(), "-".to_string()))
-        );
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Realitas X"),
-            Some(("Realitas X".to_string(), "-".to_string()))
-        );
-
-        assert_eq!(
-            Excel::parse_subject_with_code_2("Jaringan Komputer A"),
-            Some(("Jaringan Komputer".to_string(), "A".to_string()))
-        );
+        struct TestCase {
+            class: String,
+            subject_name: String,
+            subject_code: String,
+        }
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                class: "Interaksi Manusia Komputer (EN) + IUP".to_string(),
+                subject_code: "(EN) + IUP".to_string(),
+                subject_name: "Interaksi Manusia Komputer".to_string(),
+            },
+            TestCase {
+                class: "Interaksi Manusia Komputer D - EN".to_string(),
+                subject_code: "D - EN".to_string(),
+                subject_name: "Interaksi Manusia Komputer".to_string(),
+            },
+            TestCase {
+                class: "Interaksi Manusia Komputer D-EN".to_string(),
+                subject_code: "D - EN".to_string(),
+                subject_name: "Interaksi Manusia Komputer".to_string(),
+            },
+            TestCase {
+                class: "Jaringan Komputer - IUP".to_string(),
+                subject_code: "IUP".to_string(),
+                subject_name: "Jaringan Komputer".to_string(),
+            },
+            TestCase {
+                class: "Jaringan Komputer-IUP".to_string(),
+                subject_code: "IUP".to_string(),
+                subject_name: "Jaringan Komputer".to_string(),
+            },
+            TestCase {
+                class: "Interaksi Manusia Komputer - RKA".to_string(),
+                subject_code: "RKA".to_string(),
+                subject_name: "Interaksi Manusia Komputer".to_string(),
+            },
+            TestCase {
+                class: "Interaksi Manusia Komputer-RPL".to_string(),
+                subject_code: "RPL".to_string(),
+                subject_name: "Interaksi Manusia Komputer".to_string(),
+            },
+            TestCase {
+                class: "Game Cerdas".to_string(),
+                subject_code: "-".to_string(),
+                subject_name: "Game Cerdas".to_string(),
+            },
+            TestCase {
+                class: "Realitas X".to_string(),
+                subject_code: "-".to_string(),
+                subject_name: "Realitas X".to_string(),
+            },
+            TestCase {
+                class: "Jaringan Komputer A".to_string(),
+                subject_code: "A".to_string(),
+                subject_name: "Jaringan Komputer".to_string(),
+            },
+        ];
+        test_cases.into_iter().for_each(|case| {
+            assert_eq!(
+                Excel::parse_subject_with_code_2(&case.class),
+                Some((case.subject_name, case.subject_code))
+            );
+        });
     }
 }

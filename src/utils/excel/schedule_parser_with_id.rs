@@ -5,10 +5,9 @@ use super::{AsIdParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
 impl AsIdParser for Excel {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
         let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
-        match self.subject_to_id.get(&subject_name.to_lowercase()) {
-            Some(val) => Some((val.to_string(), code)),
-            None => None,
-        }
+        self.subject_to_id
+            .get(&subject_name.to_lowercase())
+            .map(|val| (val.to_string(), code))
     }
 
     fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>> {
@@ -34,16 +33,13 @@ impl AsIdParser for Excel {
 impl SessionParser<i8> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<i8> {
         let session_name = self.parse_session(row_idx)?;
-        match self.session_to_id.get(&session_name) {
-            Some(val) => Some(*val),
-            None => None,
-        }
+        self.session_to_id.get(&session_name).copied()
     }
 }
 
 impl ScheduleParser<Class> for Excel {
     fn get_schedule(&self) -> Vec<Class> {
-        let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1 as usize);
+        let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1);
 
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
@@ -51,7 +47,7 @@ impl ScheduleParser<Class> for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                let (subject_id, class_code) = match self.get_subject_id_with_code(&val) {
+                let (subject_id, class_code) = match self.get_subject_id_with_code(val) {
                     Some(val) => val,
                     None => continue,
                 };

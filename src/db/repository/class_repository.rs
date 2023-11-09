@@ -70,7 +70,7 @@ impl ClassRepository<'_> {
                 (
                     session
                         .get::<String, &str>("session_time")
-                        .split("-")
+                        .split('-')
                         .collect::<Vec<_>>()[0]
                         .to_string(),
                     session.get("id"),
@@ -100,7 +100,7 @@ impl ClassRepository<'_> {
     async fn insert_non_classes(
         transaction: &mut sqlx::Transaction<'_, sqlx::MySql>,
     ) -> Result<()> {
-        let non_classes = vec![
+        let non_classes = [
             "Tugas Akhir",
             "Proposal Tugas Akhir",
             "Kerja Praktik",
@@ -150,7 +150,7 @@ impl ClassRepository<'_> {
             for lec in item.lecturers_id.iter() {
                 sqlx::query(class_lecturers_stmt)
                     .bind(&id_class)
-                    .bind(&lec)
+                    .bind(lec)
                     .execute(&mut *tx)
                     .await
                     .with_context(|| {
@@ -166,7 +166,7 @@ impl ClassRepository<'_> {
                 .bind(&item.day)
                 .bind(&item.code)
                 .bind(0)
-                .bind(&item.session_id)
+                .bind(item.session_id)
                 .execute(&mut *tx)
                 .await
                 .with_context(|| {
@@ -210,7 +210,7 @@ impl ClassRepository<'_> {
                 class_code: row.get("class_code"),
                 day: row.get("day"),
                 lecturer_code,
-                session_start: session_start.split("-").collect::<Vec<&str>>()[0]
+                session_start: session_start.split('-').collect::<Vec<&str>>()[0]
                     .trim()
                     .to_string(),
                 subject_name: row.get("subject_name"),

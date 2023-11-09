@@ -24,7 +24,7 @@ pub async fn update_handler(
 ) -> Result<()> {
     println!("Parse class schedule from Excel");
     let excel =
-        Excel::new(&file, &sheet, repo_data.0, repo_data.1, repo_data.2).with_context(|| {
+        Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2).with_context(|| {
             format!(
                 "Error opening {} with sheet name '{:?}'",
                 &file.display(),
@@ -34,7 +34,7 @@ pub async fn update_handler(
 
     let list_class: Vec<Class> = excel.get_schedule();
 
-    if *push == true {
+    if *push {
         println!("Insert {} classes to DB", list_class.len());
         class_repo
             .insert_classes(&list_class)

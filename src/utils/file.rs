@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use tokio::{fs::File, io::AsyncWriteExt};
@@ -15,8 +15,8 @@ pub struct OutWriter {
 }
 
 impl OutWriter {
-    pub async fn new(out_path: &PathBuf) -> Result<Self> {
-        let outfile = File::create(out_path.as_path()).await?;
+    pub async fn new(out_path: &Path) -> Result<Self> {
+        let outfile = File::create(out_path).await?;
         Ok(Self { file: outfile })
     }
 
@@ -38,7 +38,7 @@ impl OutWriter {
         self.write(header_section).await?;
         match result {
             CompareVecResult::DBAndExcel(data) => {
-                for class in data.into_iter() {
+                for class in data.iter() {
                     let query = format!(
                         "From DB : {} {}, {} {}, {:?}\n",
                         class.0.subject_name,
@@ -60,7 +60,7 @@ impl OutWriter {
                 }
             }
             CompareVecResult::Excel(data) => {
-                for class in data.into_iter() {
+                for class in data.iter() {
                     let query = format!(
                         "{} {}, {} {}, {:?}\n",
                         class.subject_name,
@@ -101,11 +101,11 @@ impl OutWriter {
         changed: &Vec<(ClassFromSchedule, ClassFromSchedule)>,
         deleted: &Vec<ClassFromSchedule>,
     ) -> Result<()> {
-        self.write_change("ADDED", &CompareVecResult::Excel(&added))
+        self.write_change("ADDED", &CompareVecResult::Excel(added))
             .await?;
-        self.write_change("CHANGED", &CompareVecResult::DBAndExcel(&changed))
+        self.write_change("CHANGED", &CompareVecResult::DBAndExcel(changed))
             .await?;
-        self.write_change("DELETED", &CompareVecResult::Excel(&deleted))
+        self.write_change("DELETED", &CompareVecResult::Excel(deleted))
             .await?;
         Ok(())
     }
@@ -119,16 +119,14 @@ mod tests {
     use crate::utils::file::OutWriter;
     use std::path::PathBuf;
 
-    use tokio::io::AsyncWriteExt;
-
     #[tokio::test]
     async fn test_write() {
-        // Create a temporary file for testing
-        let mut temp_file = tokio::fs::File::create("test_write.txt").await.unwrap();
+        let out_path = PathBuf::from("test_write.txt");
+        let mut out_writer = OutWriter::new(&out_path).await.unwrap();
 
         // Write to the file
         let query = "SELECT * FROM users;".to_string();
-        temp_file.write(query.as_bytes()).await.unwrap();
+        out_writer.write(query).await.unwrap();
 
         // Read the file
         let contents = tokio::fs::read_to_string("test_write.txt").await.unwrap();

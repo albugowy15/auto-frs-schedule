@@ -46,15 +46,14 @@ impl SessionParser<String> for Excel {
 
 impl ScheduleParser<ClassFromSchedule> for Excel {
     fn get_schedule(&self) -> Vec<ClassFromSchedule> {
-        let mut list_class: Vec<ClassFromSchedule> =
-            Vec::with_capacity(self.range.get_size().1 as usize);
+        let mut list_class: Vec<ClassFromSchedule> = Vec::with_capacity(self.range.get_size().1);
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
                 let val = match c.get_string() {
                     Some(val) => val,
                     None => continue,
                 };
-                let (subject_name, class_code) = match self.get_subject_with_code(&val) {
+                let (subject_name, class_code) = match self.get_subject_with_code(val) {
                     Some(val) => val,
                     None => continue,
                 };

@@ -13,7 +13,7 @@ use crate::{
 
 pub async fn compare_handler(
     file: &PathBuf,
-    sheet: &String,
+    sheet: &str,
     outdir: &PathBuf,
     pool: &Pool<MySql>,
     repo_data: (
@@ -26,7 +26,7 @@ pub async fn compare_handler(
     let mut deleted: Vec<ClassFromSchedule> = Vec::new();
     let mut changed: Vec<(ClassFromSchedule, ClassFromSchedule)> = Vec::new();
 
-    let class_repo = ClassRepository::new(&pool);
+    let class_repo = ClassRepository::new(pool);
     println!("Get existing schedule from DB");
     let mut db_classes = class_repo
         .get_schedule()
@@ -34,7 +34,7 @@ pub async fn compare_handler(
         .with_context(|| "Error get schedules from DB")?;
 
     println!("Get latest schedule from Excel");
-    let excel = Excel::new(&file, &sheet, repo_data.0, repo_data.1, repo_data.2)
+    let excel = Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2)
         .with_context(|| "Error opening excel file")?;
     let excel_classes: Vec<ClassFromSchedule> = excel.get_schedule();
 
@@ -69,7 +69,7 @@ pub async fn compare_handler(
         deleted.len()
     );
     println!("Write the result to {:?}", &outdir);
-    let mut out_writer = OutWriter::new(&outdir)
+    let mut out_writer = OutWriter::new(outdir)
         .await
         .with_context(|| format!("Error creating {:?}", &outdir))?;
     out_writer
