@@ -2,10 +2,12 @@ use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Context, Result};
 
-use crate::shared::{
-    excel::{Excel, ScheduleParser},
-    file::OutWriter,
-    repo::{Class, ClassRepository},
+use crate::{
+    db::repository::class_repository::{Class, ClassRepository},
+    utils::{
+        excel::{Excel, ScheduleParser},
+        file::OutWriter,
+    },
 };
 
 pub async fn update_handler(

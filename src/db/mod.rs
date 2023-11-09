@@ -1,3 +1,5 @@
+pub mod repository;
+
 use anyhow::Result;
 use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
 

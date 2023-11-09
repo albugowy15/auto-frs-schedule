@@ -1,8 +1,7 @@
+use anyhow::{Context, Result};
 use std::collections::HashMap;
 
-use anyhow::{Context, Result};
-
-use crate::shared::repo::ClassRepository;
+use crate::db::repository::class_repository::ClassRepository;
 
 pub async fn prepare_data(
     class_repo: &ClassRepository<'_>,

@@ -112,11 +112,11 @@ impl Parser for Excel {
 }
 
 #[cfg(test)]
-mod test {
-    use crate::shared::excel::{Excel, Parser};
+mod tests {
+    use crate::utils::excel::{Excel, Parser};
 
     #[test]
-    fn test_parse_en_iup_class() {
+    fn test_parse_subject_with_code_2() {
         assert_eq!(
             Excel::parse_subject_with_code_2("Interaksi Manusia Komputer (EN) + IUP"),
             Some((
@@ -124,10 +124,6 @@ mod test {
                 "(EN) + IUP".to_string()
             ))
         );
-    }
-
-    #[test]
-    fn test_parse_en_class() {
         assert_eq!(
             Excel::parse_subject_with_code_2("Interaksi Manusia Komputer D - EN"),
             Some((
@@ -149,10 +145,7 @@ mod test {
                 "D - EN".to_string()
             ))
         );
-    }
 
-    #[test]
-    fn test_parse_iup_class() {
         assert_eq!(
             Excel::parse_subject_with_code_2("Jaringan Komputer -IUP"),
             Some(("Jaringan Komputer".to_string(), "IUP".to_string()))
@@ -165,10 +158,7 @@ mod test {
             Excel::parse_subject_with_code_2("Jaringan Komputer - IUP"),
             Some(("Jaringan Komputer".to_string(), "IUP".to_string()))
         );
-    }
 
-    #[test]
-    fn test_parse_strip_class() {
         assert_eq!(
             Excel::parse_subject_with_code_2("Interaksi Manusia Komputer - RKA"),
             Some(("Interaksi Manusia Komputer".to_string(), "RKA".to_string()))
@@ -185,10 +175,7 @@ mod test {
             Excel::parse_subject_with_code_2("Dasar Pemrograman-RPL"),
             Some(("Dasar Pemrograman".to_string(), "RPL".to_string()))
         );
-    }
 
-    #[test]
-    fn test_parse_single_class() {
         assert_eq!(
             Excel::parse_subject_with_code_2("Game Cerdas"),
             Some(("Game Cerdas".to_string(), "-".to_string()))
@@ -197,10 +184,7 @@ mod test {
             Excel::parse_subject_with_code_2("Realitas X"),
             Some(("Realitas X".to_string(), "-".to_string()))
         );
-    }
 
-    #[test]
-    fn test_parse_basic_class() {
         assert_eq!(
             Excel::parse_subject_with_code_2("Jaringan Komputer A"),
             Some(("Jaringan Komputer".to_string(), "A".to_string()))

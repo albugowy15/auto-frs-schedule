@@ -1,5 +1,6 @@
+use crate::db::repository::class_repository::ClassFromSchedule;
+
 use super::{AsStringParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
-use crate::shared::repo::ClassFromSchedule;
 
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
@@ -76,5 +77,41 @@ impl ScheduleParser<ClassFromSchedule> for Excel {
             }
         }
         list_class
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use calamine::Range;
+
+    use crate::utils::excel::{AsStringParser, Excel};
+
+    #[test]
+    fn test_get_subject_with_code() {
+        // Create a parser
+        let mut subject_to_id = HashMap::new();
+        subject_to_id.insert(
+            "jaringan komputer".to_string(),
+            "c6hhfe7737483833".to_string(),
+        );
+
+        let excel = Excel {
+            subject_to_id,
+            lecturer_to_id: HashMap::new(),
+            session_to_id: HashMap::new(),
+            range: Range::new((0, 0), (100, 100)),
+        };
+
+        // Test the get_subject_with_code method
+        let result = excel.get_subject_with_code("Jaringan Komputer C");
+        assert_eq!(
+            result,
+            Some(("Jaringan Komputer".to_string(), "C".to_string()))
+        );
+
+        let result = excel.get_subject_with_code("Physics P101");
+        assert_eq!(result, None);
     }
 }

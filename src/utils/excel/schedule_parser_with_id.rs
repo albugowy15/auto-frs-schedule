@@ -1,7 +1,16 @@
+use crate::db::repository::class_repository::Class;
+
 use super::{AsIdParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
-use crate::shared::repo::Class;
 
 impl AsIdParser for Excel {
+    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
+        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
+        match self.subject_to_id.get(&subject_name.to_lowercase()) {
+            Some(val) => Some((val.to_string(), code)),
+            None => None,
+        }
+    }
+
     fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>> {
         let lecturers = self.parse_lecturer(row, col)?;
         let lecturers_id: Vec<String> = lecturers
@@ -18,13 +27,6 @@ impl AsIdParser for Excel {
         match lecturers_id.is_empty() {
             true => None,
             false => Some(lecturers_id),
-        }
-    }
-    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
-        match self.subject_to_id.get(&subject_name.to_lowercase()) {
-            Some(val) => Some((val.to_string(), code)),
-            None => None,
         }
     }
 }
@@ -72,5 +74,41 @@ impl ScheduleParser<Class> for Excel {
             }
         }
         list_class
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use calamine::Range;
+
+    use crate::utils::excel::{AsIdParser, Excel};
+
+    #[test]
+    fn test_get_subject_with_code() {
+        // Create a parser
+        let mut subject_to_id = HashMap::new();
+        subject_to_id.insert(
+            "jaringan komputer".to_string(),
+            "c6hhfe7737483833".to_string(),
+        );
+
+        let excel = Excel {
+            subject_to_id,
+            lecturer_to_id: HashMap::new(),
+            session_to_id: HashMap::new(),
+            range: Range::new((0, 0), (100, 100)),
+        };
+
+        // Test the get_subject_with_code method
+        let result = excel.get_subject_id_with_code("Jaringan Komputer C");
+        assert_eq!(
+            result,
+            Some(("c6hhfe7737483833".to_string(), "C".to_string()))
+        );
+
+        let result = excel.get_subject_id_with_code("Physics P101");
+        assert_eq!(result, None);
     }
 }

@@ -3,15 +3,17 @@ use std::{collections::HashMap, path::PathBuf};
 use anyhow::{Context, Result};
 use sqlx::{MySql, Pool};
 
-use crate::shared::{
-    excel::{Excel, ScheduleParser},
-    file::OutWriter,
-    repo::{ClassFromSchedule, ClassRepository},
+use crate::{
+    db::repository::class_repository::{ClassFromSchedule, ClassRepository},
+    utils::{
+        excel::{Excel, ScheduleParser},
+        file::OutWriter,
+    },
 };
 
 pub async fn compare_handler(
     file: &PathBuf,
-    sheet: String,
+    sheet: &String,
     outdir: &PathBuf,
     pool: &Pool<MySql>,
     repo_data: (
@@ -40,6 +42,7 @@ pub async fn compare_handler(
         "Comparing {} classes from Excel with existing schedule",
         excel_classes.len()
     );
+
     for class in excel_classes {
         let key = (class.subject_name.clone(), class.class_code.clone());
         match db_classes.get(&key) {

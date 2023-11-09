@@ -1,12 +1,12 @@
+pub mod parser;
+pub mod schedule_parser;
+pub mod schedule_parser_with_id;
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
-
-pub mod parser;
-pub mod schedule_parser;
-pub mod schedule_parser_with_id;
 
 pub const DAYS: [&str; 5] = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
 

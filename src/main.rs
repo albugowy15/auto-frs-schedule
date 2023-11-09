@@ -1,5 +1,6 @@
 mod commands;
-mod shared;
+mod db;
+mod utils;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -7,10 +8,9 @@ use std::env;
 use std::path::PathBuf;
 
 use crate::{
-    commands::base::prepare_data,
-    commands::compare::compare_handler,
-    commands::update::update_handler,
-    shared::{db::Connection, repo::ClassRepository},
+    commands::base::prepare_data, commands::compare::compare_handler,
+    commands::update::update_handler, db::repository::class_repository::ClassRepository,
+    db::Connection,
 };
 
 #[derive(Parser)]
@@ -81,7 +81,7 @@ async fn main() -> Result<()> {
             file,
             sheet,
             outdir,
-        } => compare_handler(file, sheet.to_string(), outdir, &pool, initial_class_data).await?,
+        } => compare_handler(file, sheet, outdir, &pool, initial_class_data).await?,
     }
 
     println!("Done");
