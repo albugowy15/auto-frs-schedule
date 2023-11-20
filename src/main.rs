@@ -4,6 +4,7 @@ mod utils;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use env_logger::{Builder, Env};
 use std::env;
 use std::path::PathBuf;
 
@@ -58,10 +59,20 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
+    let env = Env::default()
+        .filter("AUTO_FRS_SCHEDULE_LOG_LEVEL")
+        .write_style("AUTO_FRS_SCHEDULE_LOG_STYLE");
+    env::set_var("AUTO_FRS_SCHEDULE_LOG_LEVEL", "INFO");
+    env::set_var("AUTO_FRS_SCHEDULE_LOG_STYLE", "AUTO");
+    Builder::from_env(env)
+        .format_timestamp(None)
+        .format_module_path(false)
+        .format_target(false)
+        .init();
 
     let cli = Cli::parse();
 
-    println!("Establish DB Connection");
+    log::info!("Establish DB Connection");
     let db_url = env::var("FRS_HELPER_DB_URL").with_context(|| "FRS_HELPER_DB_URL must be set")?;
     let pool = Connection::create_connection(&db_url)
         .await
@@ -84,6 +95,6 @@ async fn main() -> Result<()> {
         } => compare_handler(file, sheet, outdir, &pool, initial_class_data).await?,
     }
 
-    println!("Done");
+    log::info!("Done");
     Ok(())
 }

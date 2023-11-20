@@ -27,18 +27,18 @@ pub async fn compare_handler(
     let mut changed: Vec<(ClassFromSchedule, ClassFromSchedule)> = Vec::new();
 
     let class_repo = ClassRepository::new(pool);
-    println!("Get existing schedule from DB");
+    log::info!("Get existing schedule from DB");
     let mut db_classes = class_repo
         .get_schedule()
         .await
         .with_context(|| "Error get schedules from DB")?;
 
-    println!("Get latest schedule from Excel");
+    log::info!("Get latest schedule from Excel");
     let excel = Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2)
         .with_context(|| "Error opening excel file")?;
     let excel_classes: Vec<ClassFromSchedule> = excel.get_schedule();
 
-    println!(
+    log::info!(
         "Comparing {} classes from Excel with existing schedule",
         excel_classes.len()
     );
@@ -62,13 +62,13 @@ pub async fn compare_handler(
             deleted.push(val);
         }
     }
-    println!(
+    log::info!(
         "Detected {} changed, {} added, {} deleted class",
         changed.len(),
         added.len(),
         deleted.len()
     );
-    println!("Write the result to {:?}", &outdir);
+    log::info!("Write the result to {:?}", &outdir);
     let mut out_writer = OutWriter::new(outdir)
         .await
         .with_context(|| format!("Error creating {:?}", &outdir))?;

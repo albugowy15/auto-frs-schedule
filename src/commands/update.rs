@@ -22,7 +22,7 @@ pub async fn update_handler(
     ),
     class_repo: &ClassRepository<'_>,
 ) -> Result<()> {
-    println!("Parse class schedule from Excel");
+    log::info!("Parse class schedule from Excel");
     let excel =
         Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2).with_context(|| {
             format!(
@@ -35,7 +35,7 @@ pub async fn update_handler(
     let list_class: Vec<Class> = excel.get_schedule();
 
     if *push {
-        println!("Insert {} classes to DB", list_class.len());
+        log::info!("Insert {} classes to DB", list_class.len());
         class_repo
             .insert_classes(&list_class)
             .await
@@ -43,7 +43,7 @@ pub async fn update_handler(
     }
 
     if let Some(path_output) = &outdir {
-        println!("Write {} classes to out directory", list_class.len());
+        log::info!("Write {} classes to out directory", list_class.len());
         let mut outfile = OutWriter::new(path_output).await?;
         outfile
             .write_output(&list_class)
