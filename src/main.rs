@@ -9,8 +9,14 @@ use std::env;
 use std::path::PathBuf;
 
 use crate::{
-    commands::base::prepare_data, commands::compare::compare_handler,
-    commands::update::update_handler, db::repository::class_repository::ClassRepository,
+    commands::base::prepare_data,
+    commands::clean::clean_handler,
+    commands::compare::compare_handler,
+    commands::update::update_handler,
+    db::repository::{
+        class_repository::ClassRepository, lecturer_repository::LecturerRepository,
+        session_repository::SessionRepository, subject_repository::SubjectRepository,
+    },
     db::Connection,
 };
 
@@ -22,7 +28,7 @@ struct Cli {
 }
 
 #[derive(Subcommand)]
-enum Commands {
+pub enum Commands {
     Compare {
         #[arg(short, long, value_name = "Required for latest schedule excel file")]
         file: PathBuf,
@@ -54,6 +60,7 @@ enum Commands {
         )]
         outdir: Option<PathBuf>,
     },
+    Clean,
 }
 
 #[tokio::main]
@@ -79,7 +86,10 @@ async fn main() -> Result<()> {
         .with_context(|| "Could not establish DB connection")?;
 
     let class_repo = ClassRepository::new(&pool);
-    let initial_class_data = prepare_data(&class_repo).await?;
+    let lecturer_repo = LecturerRepository::new(&pool);
+    let subject_repo = SubjectRepository::new(&pool);
+    let session_repo = SessionRepository::new(&pool);
+    let initial_class_data = prepare_data(&lecturer_repo, &subject_repo, &session_repo).await?;
 
     match &cli.command {
         Commands::Update {
@@ -93,6 +103,9 @@ async fn main() -> Result<()> {
             sheet,
             outdir,
         } => compare_handler(file, sheet, outdir, &pool, initial_class_data).await?,
+        Commands::Clean => {
+            clean_handler(&pool).await?;
+        }
     }
 
     log::info!("Done");
