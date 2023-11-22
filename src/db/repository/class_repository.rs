@@ -31,55 +31,6 @@ impl ClassRepository<'_> {
         ClassRepository { db_pool }
     }
 
-    pub async fn get_all_subject(&self) -> Result<HashMap<String, String>> {
-        let rows = sqlx::query("SELECT id, name FROM Matkul")
-            .fetch_all(self.db_pool)
-            .await?;
-
-        let subjects = rows
-            .into_iter()
-            .map(|subject| {
-                (
-                    subject.get::<String, _>("name").to_lowercase(),
-                    subject.get("id"),
-                )
-            })
-            .collect();
-
-        Ok(subjects)
-    }
-
-    pub async fn get_all_lecture(&self) -> Result<HashMap<String, String>> {
-        let rows = sqlx::query("SELECT id, code FROM Lecturer")
-            .fetch_all(self.db_pool)
-            .await?;
-        let lecturers = rows
-            .into_iter()
-            .map(|lecturer| (lecturer.get("code"), lecturer.get("id")))
-            .collect();
-        Ok(lecturers)
-    }
-
-    pub async fn get_all_session(&self) -> Result<HashMap<String, i8>> {
-        let rows = sqlx::query("SELECT id, session_time FROM Session")
-            .fetch_all(self.db_pool)
-            .await?;
-        let sessions = rows
-            .into_iter()
-            .map(|session| {
-                (
-                    session
-                        .get::<String, &str>("session_time")
-                        .split('-')
-                        .collect::<Vec<_>>()[0]
-                        .to_string(),
-                    session.get("id"),
-                )
-            })
-            .collect();
-        Ok(sessions)
-    }
-
     async fn drop_old_classes(transaction: &mut sqlx::Transaction<'_, sqlx::MySql>) -> Result<()> {
         sqlx::query("DELETE FROM Plan")
             .execute(&mut **transaction)
