@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::Subcommand;
+use sqlx::{MySql, Pool};
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::db::repository::{
@@ -44,15 +45,16 @@ pub enum Commands {
 }
 
 pub async fn prepare_data(
-    lecturer_repo: &LecturerRepository<'_>,
-    subject_repo: &SubjectRepository<'_>,
-    session_repo: &SessionRepository<'_>,
+    pool: &Pool<MySql>,
 ) -> Result<(
     HashMap<String, String>,
     HashMap<String, String>,
     HashMap<String, i8>,
 )> {
     log::info!("Get all subjects from DB");
+    let lecturer_repo = LecturerRepository::new(pool);
+    let subject_repo = SubjectRepository::new(pool);
+    let session_repo = SessionRepository::new(pool);
 
     let subjects = subject_repo
         .get_all_subject()

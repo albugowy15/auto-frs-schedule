@@ -1,8 +1,10 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
+use sqlx::{MySql, Pool};
 
 use crate::{
+    commands::base::prepare_data,
     db::repository::class_repository::{Class, ClassRepository},
     utils::{
         excel::{Excel, ScheduleParser},
@@ -15,13 +17,9 @@ pub async fn update_handler(
     file: &PathBuf,
     sheet: &String,
     outdir: &Option<PathBuf>,
-    repo_data: (
-        HashMap<String, String>,
-        HashMap<String, String>,
-        HashMap<String, i8>,
-    ),
-    class_repo: &ClassRepository<'_>,
+    pool: &Pool<MySql>,
 ) -> Result<()> {
+    let repo_data = prepare_data(pool).await?;
     log::info!("Parse class schedule from Excel");
     let excel =
         Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2).with_context(|| {
@@ -33,6 +31,7 @@ pub async fn update_handler(
         })?;
 
     let list_class: Vec<Class> = excel.get_schedule();
+    let class_repo = ClassRepository::new(pool);
 
     if *push {
         log::info!("Insert {} classes to DB", list_class.len());

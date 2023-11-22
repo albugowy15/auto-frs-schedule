@@ -9,15 +9,8 @@ use std::env;
 use std::path::PathBuf;
 
 use crate::{
-    commands::base::prepare_data,
-    commands::clean::clean_handler,
-    commands::compare::compare_handler,
-    commands::update::update_handler,
-    db::repository::{
-        class_repository::ClassRepository, lecturer_repository::LecturerRepository,
-        session_repository::SessionRepository, subject_repository::SubjectRepository,
-    },
-    db::Connection,
+    commands::clean::clean_handler, commands::compare::compare_handler,
+    commands::update::update_handler, db::Connection,
 };
 
 #[derive(Parser)]
@@ -85,24 +78,18 @@ async fn main() -> Result<()> {
         .await
         .with_context(|| "Could not establish DB connection")?;
 
-    let class_repo = ClassRepository::new(&pool);
-    let lecturer_repo = LecturerRepository::new(&pool);
-    let subject_repo = SubjectRepository::new(&pool);
-    let session_repo = SessionRepository::new(&pool);
-    let initial_class_data = prepare_data(&lecturer_repo, &subject_repo, &session_repo).await?;
-
     match &cli.command {
         Commands::Update {
             push,
             file,
             sheet,
             outdir,
-        } => update_handler(push, file, sheet, outdir, initial_class_data, &class_repo).await?,
+        } => update_handler(push, file, sheet, outdir, &pool).await?,
         Commands::Compare {
             file,
             sheet,
             outdir,
-        } => compare_handler(file, sheet, outdir, &pool, initial_class_data).await?,
+        } => compare_handler(file, sheet, outdir, &pool).await?,
         Commands::Clean => {
             clean_handler(&pool).await?;
         }

@@ -1,9 +1,10 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use sqlx::{MySql, Pool};
 
 use crate::{
+    commands::base::prepare_data,
     db::repository::class_repository::{ClassFromSchedule, ClassRepository},
     utils::{
         excel::{Excel, ScheduleParser},
@@ -16,11 +17,6 @@ pub async fn compare_handler(
     sheet: &str,
     outdir: &PathBuf,
     pool: &Pool<MySql>,
-    repo_data: (
-        HashMap<String, String>,
-        HashMap<String, String>,
-        HashMap<String, i8>,
-    ),
 ) -> Result<()> {
     let mut added: Vec<ClassFromSchedule> = Vec::new();
     let mut deleted: Vec<ClassFromSchedule> = Vec::new();
@@ -32,6 +28,7 @@ pub async fn compare_handler(
         .get_schedule()
         .await
         .with_context(|| "Error get schedules from DB")?;
+    let repo_data = prepare_data(pool).await?;
 
     log::info!("Get latest schedule from Excel");
     let excel = Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2)
