@@ -4,6 +4,8 @@ use anyhow::{Context, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 use sqlx::{MySql, Pool, Row};
 
+use super::Repository;
+
 pub struct ClassRepository<'a> {
     db_pool: &'a Pool<MySql>,
 }
@@ -26,11 +28,13 @@ pub struct ClassFromSchedule {
     pub session_start: String,
 }
 
-impl ClassRepository<'_> {
-    pub fn new(db_pool: &Pool<MySql>) -> ClassRepository {
+impl<'a> Repository<'a> for ClassRepository<'a> {
+    fn new(db_pool: &'a Pool<MySql>) -> Self {
         ClassRepository { db_pool }
     }
+}
 
+impl ClassRepository<'_> {
     async fn drop_old_classes(transaction: &mut sqlx::Transaction<'_, sqlx::MySql>) -> Result<()> {
         sqlx::query("DELETE FROM Plan")
             .execute(&mut **transaction)
@@ -169,5 +173,27 @@ impl ClassRepository<'_> {
             class_map.insert(key, value);
         }
         Ok(class_map)
+    }
+
+    pub async fn sync_taken(&self) -> Result<()> {
+        let mut tx = self.db_pool.begin().await?;
+        let rows = sqlx::query(
+            "select count(p.id) as actual_taken, c.taken, c.id from Class c inner join _ClassToPlan cp on cp.A = c.id inner join Plan p on cp.B = p.id group by c.id having count(p.id) != c.taken",
+        )
+        .fetch_all(&mut *tx)
+        .await?;
+        log::info!("Sync taken {} classes", rows.len());
+
+        for row in rows.into_iter() {
+            let actual_class_taken: i8 = row.get("actual_taken");
+            let class_id: String = row.get("id");
+            sqlx::query("update Class set taken = ? where id = ?")
+                .bind(actual_class_taken)
+                .bind(class_id)
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(())
     }
 }

@@ -5,7 +5,10 @@ use sqlx::{MySql, Pool};
 
 use crate::{
     commands::base::prepare_data,
-    db::repository::class_repository::{Class, ClassRepository},
+    db::repository::{
+        class_repository::{Class, ClassRepository},
+        Repository,
+    },
     utils::{
         excel::{Excel, ScheduleParser},
         file::OutWriter,

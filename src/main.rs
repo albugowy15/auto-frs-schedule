@@ -3,57 +3,18 @@ mod db;
 mod utils;
 
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use commands::Commands;
 use env_logger::{Builder, Env};
 use std::env;
-use std::path::PathBuf;
 
-use crate::{
-    commands::clean::clean_handler, commands::compare::compare_handler,
-    commands::update::update_handler, db::Connection,
-};
+use crate::db::Connection;
 
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
-}
-
-#[derive(Subcommand)]
-pub enum Commands {
-    Compare {
-        #[arg(short, long, value_name = "Required for latest schedule excel file")]
-        file: PathBuf,
-
-        #[arg(short, long, value_name = "Required for excel sheet name")]
-        sheet: String,
-
-        #[arg(short, long, value_name = "Required for output path")]
-        outdir: PathBuf,
-    },
-    Update {
-        #[arg(
-            short,
-            long,
-            value_name = "Optional to determine wether only parse or also push class to DB"
-        )]
-        push: bool,
-
-        #[arg(short, long, value_name = "Required for excel file path")]
-        file: PathBuf,
-
-        #[arg(short, long, value_name = "Required for excel sheet name")]
-        sheet: String,
-
-        #[arg(
-            short,
-            long,
-            value_name = "Optional to write the sql statement to output directory"
-        )]
-        outdir: Option<PathBuf>,
-    },
-    Clean,
 }
 
 #[tokio::main]
@@ -84,14 +45,17 @@ async fn main() -> Result<()> {
             file,
             sheet,
             outdir,
-        } => update_handler(push, file, sheet, outdir, &pool).await?,
+        } => commands::update::update_handler(push, file, sheet, outdir, &pool).await?,
         Commands::Compare {
             file,
             sheet,
             outdir,
-        } => compare_handler(file, sheet, outdir, &pool).await?,
+        } => commands::compare::compare_handler(file, sheet, outdir, &pool).await?,
         Commands::Clean => {
-            clean_handler(&pool).await?;
+            commands::clean::clean_handler(&pool).await?;
+        }
+        Commands::Sync => {
+            commands::sync::sync_handler(&pool).await?;
         }
     }
 

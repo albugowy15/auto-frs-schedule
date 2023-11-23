@@ -1,15 +1,19 @@
 use anyhow::Result;
 use sqlx::{MySql, Pool};
 
+use super::Repository;
+
 pub struct ManyToManyRepository<'a> {
     db_pool: &'a Pool<MySql>,
 }
 
-impl ManyToManyRepository<'_> {
-    pub fn new(db_pool: &Pool<MySql>) -> ManyToManyRepository {
+impl<'a> Repository<'a> for ManyToManyRepository<'a> {
+    fn new(db_pool: &'a Pool<MySql>) -> Self {
         ManyToManyRepository { db_pool }
     }
+}
 
+impl ManyToManyRepository<'_> {
     pub async fn drop_invalid_class_to_plan(&self) -> Result<()> {
         let mut tx = self.db_pool.begin().await?;
         let result_b = sqlx::query("DELETE FROM _ClassToPlan WHERE B NOT IN (SELECT id FROM Plan)")
