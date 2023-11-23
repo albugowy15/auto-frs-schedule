@@ -3,8 +3,16 @@ use std::collections::HashMap;
 use anyhow::Result;
 use sqlx::{MySql, Pool, Row};
 
+use super::Repository;
+
 pub struct SubjectRepository<'a> {
     db_pool: &'a Pool<MySql>,
+}
+
+impl<'a> Repository<'a> for SubjectRepository<'a> {
+    fn new(db_pool: &'a Pool<MySql>) -> Self {
+        SubjectRepository { db_pool }
+    }
 }
 
 impl SubjectRepository<'_> {

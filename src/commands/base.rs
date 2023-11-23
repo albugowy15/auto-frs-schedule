@@ -1,48 +1,11 @@
 use anyhow::{Context, Result};
-use clap::Subcommand;
 use sqlx::{MySql, Pool};
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 use crate::db::repository::{
     lecturer_repository::LecturerRepository, session_repository::SessionRepository,
-    subject_repository::SubjectRepository,
+    subject_repository::SubjectRepository, Repository,
 };
-
-#[derive(Subcommand)]
-pub enum Commands {
-    Compare {
-        #[arg(short, long, value_name = "Required for latest schedule excel file")]
-        file: PathBuf,
-
-        #[arg(short, long, value_name = "Required for excel sheet name")]
-        sheet: String,
-
-        #[arg(short, long, value_name = "Required for output path")]
-        outdir: PathBuf,
-    },
-    Update {
-        #[arg(
-            short,
-            long,
-            value_name = "Optional to determine wether only parse or also push class to DB"
-        )]
-        push: bool,
-
-        #[arg(short, long, value_name = "Required for excel file path")]
-        file: PathBuf,
-
-        #[arg(short, long, value_name = "Required for excel sheet name")]
-        sheet: String,
-
-        #[arg(
-            short,
-            long,
-            value_name = "Optional to write the sql statement to output directory"
-        )]
-        outdir: Option<PathBuf>,
-    },
-    Clean,
-}
 
 pub async fn prepare_data(
     pool: &Pool<MySql>,

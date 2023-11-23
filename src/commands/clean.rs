@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::{MySql, Pool};
 
-use crate::db::repository::many_to_many_repository::ManyToManyRepository;
+use crate::db::repository::{many_to_many_repository::ManyToManyRepository, Repository};
 
 pub async fn clean_handler(pool: &Pool<MySql>) -> Result<()> {
     log::info!("Clean up invalid foreign key");

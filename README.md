@@ -6,6 +6,8 @@ This project is a part of the [Informatics FRS Helper](https://github.com/albugo
 ## Supported Commands
 - `update` : Parse all class data from Excel then push it to MySQL database or save it to SQL file.
 - `compare` : Compare class schedule from database with latest Excel file.
+- `sync` : Update the `taken` field in the `Class` table and the `totalSks` field in the `Plan` table to reflect their current values.
+- `clean` : Remove any invalid foreign keys from the `_ClassToPlan` and `_ClassToLecturer` tables.
 
 ## Supported Arguments
 
@@ -77,6 +79,16 @@ Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule f
 auto-frs-schedule compare -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/changes.txt
 ```
 Open `FRS.xlsx` file from `~/Downloads` directory and parse all class schedule from `Jadwal Kuliah` sheet name. Compare it with existing class schedule from DB. Save the output to `result/changes.txt` directory.
+
+```
+auto-frs-schedule sync
+```
+Update the `taken` field in the `Class` table and the `totalSks` field in the `Plan` table to reflect their current values.
+
+```
+auto-frs-schedule clean
+```
+Remove any invalid foreign keys from the `_ClassToPlan` and `_ClassToLecturer` tables.
 
 ## Libraries
 ### calamine

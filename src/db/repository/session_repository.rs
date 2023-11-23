@@ -3,15 +3,19 @@ use std::collections::HashMap;
 use anyhow::Result;
 use sqlx::{MySql, Pool, Row};
 
+use super::Repository;
+
 pub struct SessionRepository<'a> {
     db_pool: &'a Pool<MySql>,
 }
 
-impl SessionRepository<'_> {
-    pub fn new(db_pool: &Pool<MySql>) -> SessionRepository {
+impl<'a> Repository<'a> for SessionRepository<'a> {
+    fn new(db_pool: &'a Pool<MySql>) -> Self {
         SessionRepository { db_pool }
     }
+}
 
+impl SessionRepository<'_> {
     pub async fn get_all_session(&self) -> Result<HashMap<String, i8>> {
         let rows = sqlx::query("SELECT id, session_time FROM Session")
             .fetch_all(self.db_pool)
