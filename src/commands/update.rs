@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use sqlx::{MySql, Pool};
 
 use crate::{
-    commands::base::prepare_data,
+    commands::prepare_data,
     db::repository::{
         class_repository::{Class, ClassRepository},
         Repository,

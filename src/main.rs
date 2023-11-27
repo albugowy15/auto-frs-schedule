@@ -59,6 +59,9 @@ async fn main() -> Result<()> {
         }
     }
 
+    log::info!("Closing DB Connection");
+    pool.close().await;
+
     log::info!("Done");
     Ok(())
 }

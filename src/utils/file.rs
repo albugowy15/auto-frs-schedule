@@ -113,11 +113,9 @@ impl OutWriter {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::repository::class_repository::Class;
-    use crate::utils::file::ClassFromSchedule;
-    use crate::utils::file::CompareVecResult;
-    use crate::utils::file::OutWriter;
     use std::path::PathBuf;
+
+    use super::*;
 
     #[tokio::test]
     async fn test_write() {

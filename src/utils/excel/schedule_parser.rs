@@ -85,7 +85,7 @@ mod tests {
 
     use calamine::Range;
 
-    use crate::utils::excel::{AsStringParser, Excel};
+    use super::*;
 
     #[test]
     fn test_get_subject_with_code() {

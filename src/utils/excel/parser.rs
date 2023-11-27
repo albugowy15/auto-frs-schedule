@@ -113,7 +113,7 @@ impl Parser for Excel {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::excel::{Excel, Parser};
+    use super::*;
 
     #[test]
     fn test_parse_subject_with_code_2() {
