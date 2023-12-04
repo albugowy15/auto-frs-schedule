@@ -10,7 +10,7 @@ pub struct ClassRepository<'a> {
     db_pool: &'a Pool<MySql>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Class {
     pub matkul_id: String,
     pub lecturers_id: Vec<String>,
@@ -19,7 +19,7 @@ pub struct Class {
     pub session_id: i8,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Clone)]
 pub struct ClassFromSchedule {
     pub subject_name: String,
     pub class_code: String,

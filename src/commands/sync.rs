@@ -7,9 +7,14 @@ use crate::db::repository::{
 
 pub async fn sync_handler(pool: &Pool<MySql>) -> Result<()> {
     log::info!("Sync taken from Class");
-    ClassRepository::new(pool).sync_taken().await?;
+    let class_repo = ClassRepository::new(pool);
 
     log::info!("Sync totalSks from Plan");
-    PlanRepository::new(pool).sync_total_sks().await?;
+    let plan_repo = PlanRepository::new(pool);
+
+    match tokio::try_join!(class_repo.sync_taken(), plan_repo.sync_total_sks()) {
+        Ok(_) => log::info!("Succesfully sync taken and totalSks from Class and Plan table"),
+        Err(e) => log::error!("Error sync : {}", e),
+    }
     Ok(())
 }

@@ -1,14 +1,11 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::{Context, Result};
 use sqlx::{MySql, Pool};
 
 use crate::{
     commands::prepare_data,
-    db::repository::{
-        class_repository::{Class, ClassRepository},
-        Repository,
-    },
+    db::repository::{class_repository::ClassRepository, Repository},
     utils::{
         excel::{Excel, ScheduleParser},
         file::OutWriter,
@@ -33,24 +30,39 @@ pub async fn update_handler(
             )
         })?;
 
-    let list_class: Vec<Class> = excel.get_schedule();
-    let class_repo = ClassRepository::new(pool);
+    let list_class = Arc::new(excel.get_schedule());
+    let mut handles = Vec::new();
 
     if *push {
-        log::info!("Insert {} classes to DB", list_class.len());
-        class_repo
-            .insert_classes(&list_class)
-            .await
-            .with_context(|| "Error inserting class to DB")?;
+        let cloned_list_class = Arc::clone(&list_class);
+        let cloned_pool = pool.clone();
+        let handle = tokio::task::spawn(async move {
+            log::info!("Insert {} classes to DB", cloned_list_class.len());
+            let class_repo = ClassRepository::new(&cloned_pool);
+            if let Err(e) = class_repo.insert_classes(&cloned_list_class).await {
+                log::error!("Error inserting class to DB: {}", e);
+            }
+        });
+        handles.push(handle);
     }
 
     if let Some(path_output) = &outdir {
-        log::info!("Write {} classes to out directory", list_class.len());
-        let mut outfile = OutWriter::new(path_output).await?;
-        outfile
-            .write_output(&list_class)
-            .await
-            .with_context(|| "Error writing output to sql")?;
+        let cloned_list_class = Arc::clone(&list_class);
+        let cloned_path_output = path_output.clone();
+        log::info!("Write {} classes to out directory", cloned_list_class.len());
+        let handle = tokio::task::spawn(async move {
+            let mut outfile = OutWriter::new(&cloned_path_output)
+                .await
+                .expect("Cant create file");
+            outfile
+                .write_output(&cloned_list_class)
+                .await
+                .expect("Error writing output to sql file");
+        });
+        handles.push(handle);
+    }
+    for handle in handles {
+        handle.await?;
     }
     Ok(())
 }
