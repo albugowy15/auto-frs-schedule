@@ -52,10 +52,10 @@ async fn main() -> Result<()> {
             outdir,
         } => commands::compare::compare_handler(file, sheet, outdir, &pool).await?,
         Commands::Clean => {
-            commands::clean::clean_handler(&pool).await?;
+            commands::clean::clean_handler(&pool).await;
         }
         Commands::Sync => {
-            commands::sync::sync_handler(&pool).await?;
+            commands::sync::sync_handler(&pool).await;
         }
     }
 

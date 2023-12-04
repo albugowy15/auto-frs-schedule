@@ -1,11 +1,10 @@
-use anyhow::Result;
 use sqlx::{MySql, Pool};
 
 use crate::db::repository::{
     class_repository::ClassRepository, plan_repository::PlanRepository, Repository,
 };
 
-pub async fn sync_handler(pool: &Pool<MySql>) -> Result<()> {
+pub async fn sync_handler(pool: &Pool<MySql>) {
     log::info!("Sync taken from Class");
     let class_repo = ClassRepository::new(pool);
 
@@ -16,5 +15,4 @@ pub async fn sync_handler(pool: &Pool<MySql>) -> Result<()> {
         Ok(_) => log::info!("Succesfully sync taken and totalSks from Class and Plan table"),
         Err(e) => log::error!("Error sync : {}", e),
     }
-    Ok(())
 }

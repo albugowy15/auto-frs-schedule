@@ -39,9 +39,10 @@ pub async fn update_handler(
         let handle = tokio::task::spawn(async move {
             log::info!("Insert {} classes to DB", cloned_list_class.len());
             let class_repo = ClassRepository::new(&cloned_pool);
-            if let Err(e) = class_repo.insert_classes(&cloned_list_class).await {
-                log::error!("Error inserting class to DB: {}", e);
-            }
+            class_repo
+                .insert_classes(&cloned_list_class)
+                .await
+                .expect("Error inserting class to DB");
         });
         handles.push(handle);
     }
