@@ -69,7 +69,9 @@ impl ClassRepository<'_> {
                 .fetch_one(&mut **transaction)
                 .await
                 .with_context(|| format!("Error find matkul_id for {}", item))?;
-            let matkul_id: &str = res.get("id");
+            let matkul_id: &str = res
+                .try_get("id")
+                .with_context(|| "Error getting matkul_id")?;
             let id_class = cuid::cuid()?;
             sqlx::query(class_stmt)
                 .bind(&id_class)
@@ -88,7 +90,7 @@ impl ClassRepository<'_> {
         let mut tx = self.db_pool.begin().await?;
         Self::drop_old_classes(&mut tx)
             .await
-            .with_context(|| "Error drop old classes")?;
+            .with_context(|| "Error dropping old classes")?;
 
         let class_stmt = "INSERT INTO Class (id, matkulId, day, code, taken, sessionId) VALUES (?, ?, ?, ?, ?, ?)";
         let class_lecturers_stmt = "INSERT INTO _ClassToLecturer (A, B) VALUES (?, ?)";
@@ -141,7 +143,7 @@ impl ClassRepository<'_> {
 
     pub async fn get_schedule(&self) -> Result<HashMap<(String, String), ClassFromSchedule>> {
         let rows = sqlx::query(
-            "SELECT c.id, m.name as subject_name, c.code as class_code, c.day, l.code as lecture_code, cls.total_lecturer, s.session_time FROM Class c INNER JOIN (SELECT c.id, COUNT(c.id) as total_lecturer  FROM Class c INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id GROUP BY (c.id)) cls ON cls.id = c.id INNER JOIN Matkul m ON c.matkulId = m.id INNER JOIN Session s on s.id = c.sessionId INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id;",
+            "SELECT c.id, m.name as subject_name, c.code as class_code, c.day, l.code as lecture_code, cls.total_lecturer, s.session_time FROM Class c INNER JOIN (SELECT c.id, COUNT(c.id) as total_lecturer  FROM Class c INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id GROUP BY (c.id)) cls ON cls.id = c.id INNER JOIN Matkul m ON c.matkulId = m.id INNER JOIN Session s on s.id = c.sessionId INNER JOIN `_ClassToLecturer` ctl ON c.id = ctl.A INNER JOIN Lecturer l ON ctl.B = l.id",
         )
         .fetch_all(self.db_pool)
         .await?;
@@ -151,7 +153,9 @@ impl ClassRepository<'_> {
             let total_lecturer = row.get::<i32, _>("total_lecturer");
             let lecturer_code: Vec<String> = if total_lecturer > 1 {
                 let class_id: String = row.get("id");
-                let lec_rows = sqlx::query("SELECT l.code FROM Lecturer l INNER JOIN `_ClassToLecturer` ctl ON l.id = ctl.B INNER JOIN Class c ON ctl.A = c.id WHERE c.id = ?").bind(class_id).fetch_all(self.db_pool).await?;
+                let lec_rows = sqlx::query("SELECT l.code FROM Lecturer l INNER JOIN `_ClassToLecturer` ctl ON l.id = ctl.B INNER JOIN Class c ON ctl.A = c.id WHERE c.id = ?")
+                    .bind(class_id)
+                    .fetch_all(self.db_pool).await?;
                 lec_rows
                     .into_iter()
                     .map(|row| row.get("code"))
@@ -165,7 +169,10 @@ impl ClassRepository<'_> {
                 class_code: row.get("class_code"),
                 day: row.get("day"),
                 lecturer_code,
-                session_start: session_start.split('-').collect::<Vec<&str>>()[0]
+                session_start: session_start
+                    .split('-')
+                    .next()
+                    .unwrap_or("")
                     .trim()
                     .to_string(),
                 subject_name: row.get("subject_name"),

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Subcommand;
 use sqlx::{MySql, Pool};
 
@@ -62,23 +62,17 @@ pub async fn prepare_data(
     let lecturer_repo = LecturerRepository::new(pool);
     let subject_repo = SubjectRepository::new(pool);
     let session_repo = SessionRepository::new(pool);
-
-    let subjects = subject_repo
-        .get_all_subject()
-        .await
-        .with_context(|| "Error retrieve all subjects from DB")?;
-
-    log::info!("Get all lecturers from DB");
-    let lecturers = lecturer_repo
-        .get_all_lecture()
-        .await
-        .with_context(|| "Error retrieve all lecturers from DB")?;
-
-    log::info!("Get all sessions from DB");
-    let sessions = session_repo
-        .get_all_session()
-        .await
-        .with_context(|| "Error retrieve all sessions from DB")?;
-
+    let (subjects, lecturers, sessions) = tokio::try_join!(
+        subject_repo.get_all_subjects(),
+        lecturer_repo.get_all_lecturers(),
+        session_repo.get_all_sessions()
+    )
+    .map_err(|e| {
+        log::error!(
+            "Error retrieve subjects, lecturers, and session from DB: {}",
+            e
+        );
+        e
+    })?;
     Ok((subjects, lecturers, sessions))
 }

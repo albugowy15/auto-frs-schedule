@@ -16,20 +16,38 @@ pub struct OutWriter {
 
 impl OutWriter {
     pub async fn new(out_path: &Path) -> Result<Self> {
-        let outfile = File::create(out_path).await?;
-        Ok(Self { file: outfile })
+        Ok(Self {
+            file: File::create(out_path).await?,
+        })
     }
 
     async fn write(&mut self, query: String) -> Result<()> {
         self.file
             .write_all(query.as_bytes())
             .await
-            .with_context(|| format!("Error writing to file: {}", query))?;
+            .with_context(|| format!("Error writing to file: {:?}", self.file))?;
         Ok(())
     }
 
     async fn sync_all(&mut self) -> Result<()> {
-        self.file.sync_all().await?;
+        self.file
+            .sync_all()
+            .await
+            .with_context(|| format!("Error syncing file: {:?}", self.file))?;
+        Ok(())
+    }
+
+    async fn write_class_info(&mut self, prefix: &str, class: &ClassFromSchedule) -> Result<()> {
+        let query = format!(
+            "{} {} {}, {} {}, {:?}\n",
+            prefix,
+            class.subject_name,
+            class.class_code,
+            class.day,
+            class.session_start,
+            class.lecturer_code
+        );
+        self.write(query).await?;
         Ok(())
     }
 
@@ -38,48 +56,23 @@ impl OutWriter {
         self.write(header_section).await?;
         match result {
             CompareVecResult::DBAndExcel(data) => {
-                for class in data.iter() {
-                    let query = format!(
-                        "From DB : {} {}, {} {}, {:?}\n",
-                        class.0.subject_name,
-                        class.0.class_code,
-                        class.0.day,
-                        class.0.session_start,
-                        class.0.lecturer_code
-                    );
-                    self.write(query).await?;
-                    let query = format!(
-                        "From Excel : {} {}, {} {}, {:?}\n",
-                        class.1.subject_name,
-                        class.1.class_code,
-                        class.1.day,
-                        class.1.session_start,
-                        class.1.lecturer_code
-                    );
-                    self.write(query).await?;
+                for (db_class, excel_class) in data.iter() {
+                    self.write_class_info("From DB :", db_class).await?;
+                    self.write_class_info("From Excel :", excel_class).await?;
                 }
             }
             CompareVecResult::Excel(data) => {
                 for class in data.iter() {
-                    let query = format!(
-                        "{} {}, {} {}, {:?}\n",
-                        class.subject_name,
-                        class.class_code,
-                        class.day,
-                        class.session_start,
-                        class.lecturer_code
-                    );
-                    self.write(query).await?;
+                    self.write_class_info("", class).await?;
                 }
             }
         };
-
         Ok(())
     }
 
     #[allow(deprecated)]
-    pub async fn write_output(&mut self, list_class: &Vec<Class>) -> Result<()> {
-        for class in list_class {
+    pub async fn write_output(&mut self, list_class: &[Class]) -> Result<()> {
+        for class in list_class.iter() {
             let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
             let query = format!(
             "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES ('{}', '{}', '{}', '{}', false, 0, {});\n",

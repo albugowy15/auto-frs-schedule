@@ -11,8 +11,10 @@ pub async fn sync_handler(pool: &Pool<MySql>) {
     log::info!("Sync totalSks from Plan");
     let plan_repo = PlanRepository::new(pool);
 
-    match tokio::try_join!(class_repo.sync_taken(), plan_repo.sync_total_sks()) {
-        Ok(_) => log::info!("Succesfully sync taken and totalSks from Class and Plan table"),
-        Err(e) => log::error!("Error sync : {}", e),
+    if let Err(e) = tokio::try_join!(class_repo.sync_taken(), plan_repo.sync_total_sks()) {
+        log::error!("Error syncing: {}", e);
+        return;
     }
+
+    log::info!("Successfully synced taken and totalSks from Class and Plan tables");
 }

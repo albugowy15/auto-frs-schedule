@@ -36,10 +36,9 @@ pub async fn update_handler(
     if *push {
         let cloned_list_class = Arc::clone(&list_class);
         let cloned_pool = pool.clone();
-        let handle = tokio::task::spawn(async move {
+        let handle = tokio::spawn(async move {
             log::info!("Insert {} classes to DB", cloned_list_class.len());
-            let class_repo = ClassRepository::new(&cloned_pool);
-            class_repo
+            ClassRepository::new(&cloned_pool)
                 .insert_classes(&cloned_list_class)
                 .await
                 .expect("Error inserting class to DB");
@@ -52,10 +51,9 @@ pub async fn update_handler(
         let cloned_path_output = path_output.clone();
         log::info!("Write {} classes to out directory", cloned_list_class.len());
         let handle = tokio::task::spawn(async move {
-            let mut outfile = OutWriter::new(&cloned_path_output)
+            OutWriter::new(&cloned_path_output)
                 .await
-                .expect("Cant create file");
-            outfile
+                .expect("Cant create file")
                 .write_output(&cloned_list_class)
                 .await
                 .expect("Error writing output to sql file");

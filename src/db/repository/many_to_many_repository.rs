@@ -19,15 +19,12 @@ impl ManyToManyRepository<'_> {
         let result_b = sqlx::query("DELETE FROM _ClassToPlan WHERE B NOT IN (SELECT id FROM Plan)")
             .execute(&mut *tx)
             .await?;
-
         let result_a =
             sqlx::query("DELETE FROM _ClassToPlan WHERE A NOT IN (SELECT id from Class)")
                 .execute(&mut *tx)
                 .await?;
-        log::info!(
-            "Cleaned {} invalid _ClassToPlan",
-            result_a.rows_affected() + result_b.rows_affected()
-        );
+        let rows_affected = result_a.rows_affected() + result_b.rows_affected();
+        log::info!("Cleaned {} invalid _ClassToPlan", rows_affected);
         tx.commit().await?;
         Ok(())
     }
@@ -42,10 +39,8 @@ impl ManyToManyRepository<'_> {
             sqlx::query("DELETE FROM _ClassToLecturer WHERE A NOT IN (SELECT id from Class)")
                 .execute(&mut *tx)
                 .await?;
-        log::info!(
-            "Cleaned {} invalid _ClassToLecturer",
-            result_a.rows_affected() + result_b.rows_affected()
-        );
+        let rows_affected = result_a.rows_affected() + result_b.rows_affected();
+        log::info!("Cleaned {} invalid _ClassToLecturer", rows_affected);
         tx.commit().await?;
         Ok(())
     }

@@ -2,26 +2,30 @@ use super::{Excel, Parser};
 
 impl Parser for Excel {
     fn parse_lecturer(&self, row: u32, col: u32) -> Option<Vec<&str>> {
-        let lecturer = self
-            .range
-            .get_value((row + 1, col))?
-            .get_string()?
-            .split('/')
-            .collect::<Vec<_>>()[2]
-            .split('-')
-            .collect();
-        Some(lecturer)
+        self.range
+            .get_value((row + 1, col))
+            .and_then(|cell| cell.get_string())
+            .map(|lecturer| {
+                lecturer
+                    .split('/')
+                    .nth(2)
+                    .unwrap_or_default()
+                    .split('-')
+                    .collect()
+            })
     }
 
     fn parse_session(&self, row_idx: u32) -> Option<String> {
-        let session_name = self
-            .range
-            .get_value((row_idx, 1))?
-            .get_string()?
-            .split(" - ")
-            .collect::<Vec<&str>>()[0]
-            .to_string();
-        Some(session_name)
+        self.range
+            .get_value((row_idx, 1))
+            .and_then(|cell| cell.get_string())
+            .map(|session_str| {
+                session_str
+                    .split(" - ")
+                    .next()
+                    .unwrap_or_default()
+                    .to_string()
+            })
     }
 
     fn parse_subject_with_code_2(val: &str) -> Option<(String, String)> {
@@ -29,14 +33,14 @@ impl Parser for Excel {
         // CASE 1: (EN) + IUP
         if val.contains("(EN) + IUP") {
             return Some((
-                val.split("(EN) + IUP").nth(0)?.trim().to_string(),
+                val.split("(EN) + IUP").next()?.trim().to_string(),
                 "(EN) + IUP".to_string(),
             ));
         }
 
         // CASE 2: IUP
         if val.contains("IUP") {
-            let subject = val.split("IUP").nth(0)?.trim().split('-').nth(0)?.trim();
+            let subject = val.split("IUP").next()?.trim().split('-').next()?.trim();
             // let subject = splitted[0..splitted.len() - 1].join(" ");
             return Some((subject.to_string(), "IUP".to_string()));
         }
@@ -45,10 +49,10 @@ impl Parser for Excel {
         if val.contains("EN") {
             let splitted: Vec<&str> = val
                 .split("EN")
-                .nth(0)?
+                .next()?
                 .trim()
                 .split('-')
-                .nth(0)?
+                .next()?
                 .split_ascii_whitespace()
                 .collect();
             let code = splitted.last()?.trim();
@@ -58,8 +62,8 @@ impl Parser for Excel {
 
         // CASE 4: - RKA, - RPL
         if val.contains('-') {
-            let splitted: Vec<&str> = val.split('-').map(|x| x.trim()).collect();
-            return Some((splitted[0].to_string(), splitted[1].to_string()));
+            let mut splitted = val.split('-').map(|x| x.trim());
+            return Some((splitted.next()?.to_string(), splitted.next()?.to_string()));
         }
 
         // CASE 5: Unique Class, examples : Realitas X

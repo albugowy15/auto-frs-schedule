@@ -14,26 +14,22 @@ impl AsIdParser for Excel {
         let lecturers = self.parse_lecturer(row, col)?;
         let lecturers_id: Vec<String> = lecturers
             .into_iter()
-            .flat_map(|lecture_code| {
-                let id = match self.lecturer_to_id.get(lecture_code.trim()) {
-                    Some(code) => code,
-                    None => self.lecturer_to_id.get("UNK").unwrap(),
-                };
-                vec![id.to_string()]
+            .map(|lecture_code| {
+                self.lecturer_to_id
+                    .get(lecture_code.trim())
+                    .unwrap_or(&"UNK".to_string())
+                    .to_string()
             })
             .collect();
 
-        match lecturers_id.is_empty() {
-            true => None,
-            false => Some(lecturers_id),
-        }
+        lecturers_id.into_iter().next().map(|first| vec![first])
     }
 }
 
 impl SessionParser<i8> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<i8> {
         let session_name = self.parse_session(row_idx)?;
-        self.session_to_id.get(&session_name).copied()
+        self.session_to_id.get(&session_name).cloned()
     }
 }
 

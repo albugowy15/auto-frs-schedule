@@ -29,8 +29,8 @@ impl Excel {
             open_workbook(file_path).with_context(|| "Cannot open excel file")?;
         let range = excel
             .worksheet_range(sheet_name)
-            .context("Error opening sheet, make sure sheet name is exists")?
-            .with_context(|| format!("Could not read excel range from sheet {}", sheet_name))?;
+            .context(format!("Error opening sheet '{}'", sheet_name))?
+            .with_context(|| format!("Could not read Excel range from sheet {}", sheet_name))?;
         Ok(Self {
             range,
             subject_to_id,

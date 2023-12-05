@@ -5,13 +5,9 @@ use super::{AsStringParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
         let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
-        match self
-            .subject_to_id
-            .contains_key(&subject_name.to_lowercase())
-        {
-            true => Some((subject_name, code)),
-            false => None,
-        }
+        self.subject_to_id
+            .get(&subject_name.to_lowercase())
+            .map(|_| (subject_name, code))
     }
 
     fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>> {
@@ -37,10 +33,9 @@ impl AsStringParser for Excel {
 impl SessionParser<String> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<String> {
         let session_name = self.parse_session(row_idx)?;
-        match self.session_to_id.contains_key(&session_name) {
-            true => Some(session_name),
-            false => None,
-        }
+        self.session_to_id
+            .contains_key(&session_name)
+            .then_some(session_name)
     }
 }
 

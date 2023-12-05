@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
     let db_url = env::var("FRS_HELPER_DB_URL").with_context(|| "FRS_HELPER_DB_URL must be set")?;
     let pool = Connection::create_connection(&db_url)
         .await
-        .with_context(|| "Could not establish DB connection")?;
+        .context("Could not establish DB connection")?;
 
     match &cli.command {
         Commands::Update {

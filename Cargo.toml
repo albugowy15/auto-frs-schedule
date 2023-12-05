@@ -13,7 +13,6 @@ repository = "https://github.com/albugowy15/auto-frs-schedule"
 strip = true
 lto = true
 
-
 [dependencies]
 calamine = "0.22.1"
 tokio = { version = "1.34.0", features = ["rt-multi-thread", "macros"] }

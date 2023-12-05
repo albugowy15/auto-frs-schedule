@@ -16,21 +16,16 @@ impl<'a> Repository<'a> for SessionRepository<'a> {
 }
 
 impl SessionRepository<'_> {
-    pub async fn get_all_session(&self) -> Result<HashMap<String, i8>> {
+    pub async fn get_all_sessions(&self) -> Result<HashMap<String, i8>> {
         let rows = sqlx::query("SELECT id, session_time FROM Session")
             .fetch_all(self.db_pool)
             .await?;
         let sessions = rows
             .into_iter()
             .map(|session| {
-                (
-                    session
-                        .get::<String, &str>("session_time")
-                        .split('-')
-                        .collect::<Vec<_>>()[0]
-                        .to_string(),
-                    session.get("id"),
-                )
+                let session_time = session.get::<String, &str>("session_time");
+                let first_part = session_time.split('-').next().unwrap_or("").to_string();
+                (first_part, session.get("id"))
             })
             .collect();
         Ok(sessions)
