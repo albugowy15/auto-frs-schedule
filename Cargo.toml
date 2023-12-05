@@ -12,6 +12,8 @@ repository = "https://github.com/albugowy15/auto-frs-schedule"
 [profile.release]
 strip = true
 lto = true
+opt-level = "z"
+debug = false
 
 [dependencies]
 calamine = "0.22.1"
