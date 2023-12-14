@@ -1,11 +1,13 @@
 use std::{path::PathBuf, sync::Arc};
 
 use anyhow::{Context, Result};
-use sqlx::{MySql, Pool};
 
 use crate::{
     commands::prepare_data,
-    db::repository::{class_repository::ClassRepository, Repository},
+    db::{
+        repository::{class_repository::ClassRepository, Repository},
+        Connection,
+    },
     utils::{
         excel::{Excel, ScheduleParser},
         file::OutWriter,
@@ -17,9 +19,9 @@ pub async fn update_handler(
     file: &PathBuf,
     sheet: &String,
     outdir: &Option<PathBuf>,
-    pool: &Pool<MySql>,
 ) -> Result<()> {
-    let repo_data = prepare_data(pool).await?;
+    let pool = Connection::create_connection().await?;
+    let repo_data = prepare_data(&pool).await?;
     log::info!("Parse class schedule from Excel");
     let excel =
         Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2).with_context(|| {
@@ -63,5 +65,6 @@ pub async fn update_handler(
     for handle in handles {
         handle.await?;
     }
+    pool.close().await;
     Ok(())
 }

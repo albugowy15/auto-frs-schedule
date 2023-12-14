@@ -1,13 +1,15 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use sqlx::{MySql, Pool};
 
 use crate::{
     commands::prepare_data,
-    db::repository::{
-        class_repository::{ClassFromSchedule, ClassRepository},
-        Repository,
+    db::{
+        repository::{
+            class_repository::{ClassFromSchedule, ClassRepository},
+            Repository,
+        },
+        Connection,
     },
     utils::{
         excel::{Excel, ScheduleParser},
@@ -15,16 +17,12 @@ use crate::{
     },
 };
 
-pub async fn compare_handler(
-    file: &PathBuf,
-    sheet: &str,
-    outdir: &PathBuf,
-    pool: &Pool<MySql>,
-) -> Result<()> {
+pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> Result<()> {
+    let pool = Connection::create_connection().await?;
     log::info!("Get existing schedule from DB");
-    let class_repo = ClassRepository::new(pool);
+    let class_repo = ClassRepository::new(&pool);
     let (mut db_classes_res, repo_data_res) =
-        tokio::try_join!(class_repo.get_schedule(), prepare_data(pool)).map_err(|e| {
+        tokio::try_join!(class_repo.get_schedule(), prepare_data(&pool)).map_err(|e| {
             log::error!("Error getting schedule: {}", e);
             e
         })?;
@@ -72,5 +70,6 @@ pub async fn compare_handler(
         .await
         .with_context(|| "Error writing result")?;
 
+    pool.close().await;
     Ok(())
 }

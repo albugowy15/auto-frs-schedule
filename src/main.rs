@@ -2,13 +2,10 @@ mod commands;
 mod db;
 mod utils;
 
-use anyhow::{Context, Result};
+use crate::utils::env;
+use anyhow::Result;
 use clap::Parser;
 use commands::Commands;
-use env_logger::{Builder, Env};
-use std::env;
-
-use crate::db::Connection;
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -19,25 +16,9 @@ struct Cli {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env::set_var("RUST_BACKTRACE", "1");
-    let env = Env::default()
-        .filter("AUTO_FRS_SCHEDULE_LOG_LEVEL")
-        .write_style("AUTO_FRS_SCHEDULE_LOG_STYLE");
-    env::set_var("AUTO_FRS_SCHEDULE_LOG_LEVEL", "INFO");
-    env::set_var("AUTO_FRS_SCHEDULE_LOG_STYLE", "AUTO");
-    Builder::from_env(env)
-        .format_timestamp(None)
-        .format_module_path(false)
-        .format_target(false)
-        .init();
+    env::setup_env();
 
     let cli = Cli::parse();
-
-    log::info!("Establish DB Connection");
-    let db_url = env::var("FRS_HELPER_DB_URL").with_context(|| "FRS_HELPER_DB_URL must be set")?;
-    let pool = Connection::create_connection(&db_url)
-        .await
-        .context("Could not establish DB connection")?;
 
     match &cli.command {
         Commands::Update {
@@ -45,22 +26,19 @@ async fn main() -> Result<()> {
             file,
             sheet,
             outdir,
-        } => commands::update::update_handler(push, file, sheet, outdir, &pool).await?,
+        } => commands::update::update_handler(push, file, sheet, outdir).await?,
         Commands::Compare {
             file,
             sheet,
             outdir,
-        } => commands::compare::compare_handler(file, sheet, outdir, &pool).await?,
+        } => commands::compare::compare_handler(file, sheet, outdir).await?,
         Commands::Clean => {
-            commands::clean::clean_handler(&pool).await;
+            commands::clean::clean_handler().await;
         }
         Commands::Sync => {
-            commands::sync::sync_handler(&pool).await;
+            commands::sync::sync_handler().await;
         }
     }
-
-    log::info!("Closing DB Connection");
-    pool.close().await;
 
     log::info!("Done");
     Ok(())
