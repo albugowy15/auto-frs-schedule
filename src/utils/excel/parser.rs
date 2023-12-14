@@ -86,11 +86,11 @@ impl Parser for Excel {
     }
 
     fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
-        let splitted = val.split('-').collect::<Vec<&str>>();
+        let splitted: Vec<&str> = val.split('-').collect();
         let subject_name: String;
         let code: String;
         if splitted.len() < 2 {
-            let split_space = val.split_ascii_whitespace().collect::<Vec<&str>>();
+            let split_space: Vec<&str> = val.split_ascii_whitespace().collect();
             let last_str = split_space.last()?.trim();
             if last_str.len() == 1 && last_str <= "L" {
                 subject_name = split_space[0..(split_space.len() - 1)].join(" ");
@@ -102,7 +102,7 @@ impl Parser for Excel {
         } else {
             let last_split = splitted.last()?.trim();
             if last_split.contains("EN") {
-                let split_space = splitted[0].split_ascii_whitespace().collect::<Vec<&str>>();
+                let split_space: Vec<&str> = splitted[0].split_ascii_whitespace().collect();
                 subject_name = split_space[0..(split_space.len() - 1)].join(" ");
                 code = format!("{} - {}", split_space.last()?, "EN");
             } else {

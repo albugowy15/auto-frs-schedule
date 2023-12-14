@@ -27,10 +27,7 @@ impl Excel {
     ) -> Result<Self> {
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| "Cannot open excel file")?;
-        let range = excel
-            .worksheet_range(sheet_name)
-            .context(format!("Error opening sheet '{}'", sheet_name))?
-            .with_context(|| format!("Could not read Excel range from sheet {}", sheet_name))?;
+        let range = excel.worksheet_range(sheet_name)?;
         Ok(Self {
             range,
             subject_to_id,

@@ -156,10 +156,7 @@ impl ClassRepository<'_> {
                 let lec_rows = sqlx::query("SELECT l.code FROM Lecturer l INNER JOIN `_ClassToLecturer` ctl ON l.id = ctl.B INNER JOIN Class c ON ctl.A = c.id WHERE c.id = ?")
                     .bind(class_id)
                     .fetch_all(self.db_pool).await?;
-                lec_rows
-                    .into_iter()
-                    .map(|row| row.get("code"))
-                    .collect::<Vec<String>>()
+                lec_rows.into_iter().map(|row| row.get("code")).collect()
             } else {
                 vec![row.get("lecture_code")]
             };
