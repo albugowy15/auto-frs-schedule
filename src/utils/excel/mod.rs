@@ -1,4 +1,5 @@
 pub mod parser;
+pub mod retrieve;
 pub mod schedule_parser;
 pub mod schedule_parser_with_id;
 
@@ -37,10 +38,15 @@ impl Excel {
     }
 }
 
-pub trait Parser {
+pub trait Retrieve {
+    fn retrieve_class_detail(&self, row_idx: u32, col_idx: u32) -> Option<String>;
+    fn retrieve_session(&self, row_idx: u32) -> Option<String>;
+}
+
+pub trait Parser<'a> {
     fn parse_subject_with_code(val: &str) -> Option<(String, String)>;
-    fn parse_lecturer(&self, row: u32, col: u32) -> Option<Vec<&str>>;
-    fn parse_session(&self, row_idx: u32) -> Option<String>;
+    fn parse_lecturer(class_detail_str: &'a str) -> Option<Vec<&'a str>>;
+    fn parse_session(session_str: &str) -> Option<String>;
     fn parse_subject_with_code_2(val: &str) -> Option<(String, String)>;
 }
 

@@ -1,6 +1,6 @@
 use crate::db::repository::class_repository::ClassFromSchedule;
 
-use super::{AsStringParser, Excel, Parser, ScheduleParser, SessionParser, DAYS};
+use super::{AsStringParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser, DAYS};
 
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
@@ -11,7 +11,8 @@ impl AsStringParser for Excel {
     }
 
     fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>> {
-        let lecturers = self.parse_lecturer(row, col)?;
+        let lecturers_str = self.retrieve_class_detail(row, col)?;
+        let lecturers = Excel::parse_lecturer(&lecturers_str)?;
         let lecturers_code: Vec<String> = lecturers
             .into_iter()
             .flat_map(|lecture_code| {
@@ -32,7 +33,8 @@ impl AsStringParser for Excel {
 
 impl SessionParser<String> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<String> {
-        let session_name = self.parse_session(row_idx)?;
+        let session_str = self.retrieve_session(row_idx)?;
+        let session_name = Excel::parse_session(&session_str)?;
         self.session_to_id
             .contains_key(&session_name)
             .then_some(session_name)
