@@ -1,31 +1,22 @@
 use super::{Excel, Parser};
 
-impl Parser for Excel {
-    fn parse_lecturer(&self, row: u32, col: u32) -> Option<Vec<&str>> {
-        self.range
-            .get_value((row + 1, col))
-            .and_then(|cell| cell.get_string())
-            .map(|lecturer| {
-                lecturer
-                    .split('/')
-                    .nth(2)
-                    .unwrap_or_default()
-                    .split('-')
-                    .collect()
-            })
+impl<'a> Parser<'a> for Excel {
+    fn parse_lecturer(class_detail_str: &'a str) -> Option<Vec<&'a str>> {
+        let lecturers: Vec<&str> = class_detail_str
+            .split('/')
+            .nth(2)?
+            .split('-')
+            .map(|lec| lec.trim())
+            .collect();
+        if lecturers.is_empty() {
+            None
+        } else {
+            Some(lecturers)
+        }
     }
 
-    fn parse_session(&self, row_idx: u32) -> Option<String> {
-        self.range
-            .get_value((row_idx, 1))
-            .and_then(|cell| cell.get_string())
-            .map(|session_str| {
-                session_str
-                    .split(" - ")
-                    .next()
-                    .unwrap_or_default()
-                    .to_string()
-            })
+    fn parse_session(session_str: &str) -> Option<String> {
+        session_str.split(" - ").next().map(|s| s.to_string())
     }
 
     fn parse_subject_with_code_2(val: &str) -> Option<(String, String)> {
@@ -184,5 +175,69 @@ mod tests {
                 Some((case.subject_name, case.subject_code))
             );
         });
+    }
+
+    #[test]
+    fn test_parse_lecturer_from_class_detail() {
+        struct TestCase<'a> {
+            class_detail: String,
+            lecturers: Vec<&'a str>,
+        }
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                class_detail: String::from("2 sks/ Sem 7 / AM - WN"),
+                lecturers: vec!["AM", "WN"],
+            },
+            TestCase {
+                class_detail: String::from("4 sks / Sem 2 / CF"),
+                lecturers: vec!["CF"],
+            },
+            TestCase {
+                class_detail: String::from("3 sks / Sem 1 / DH"),
+                lecturers: vec!["DH"],
+            },
+            TestCase {
+                class_detail: String::from("3 sks / Sem 1 / DO"),
+                lecturers: vec!["DO"],
+            },
+            TestCase {
+                class_detail: String::from("3 sks / Sem 5 / BS"),
+                lecturers: vec!["BS"],
+            },
+        ];
+
+        test_cases.into_iter().for_each(|test| {
+            assert_eq!(
+                Excel::parse_lecturer(&test.class_detail),
+                Some(test.lecturers)
+            )
+        });
+    }
+
+    #[test]
+    fn test_parse_session() {
+        struct TestCase {
+            session_str: String,
+            session_start: Option<String>,
+        }
+
+        let test_cases: Vec<TestCase> = vec![
+            TestCase {
+                session_str: String::from("08.00 - 09.00"),
+                session_start: Some(String::from("08.00")),
+            },
+            TestCase {
+                session_str: String::from("17.00 - 18.00"),
+                session_start: Some(String::from("17.00")),
+            },
+            TestCase {
+                session_str: String::from("10.00 - 11.00"),
+                session_start: Some(String::from("10.00")),
+            },
+        ];
+
+        test_cases.into_iter().for_each(|test| {
+            assert_eq!(Excel::parse_session(&test.session_str), test.session_start)
+        })
     }
 }
