@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
-
 use crate::{
     commands::prepare_data,
     db::{
@@ -17,25 +15,39 @@ use crate::{
     },
 };
 
-pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> Result<()> {
-    let pool = Connection::create_connection().await?;
+pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
+    let pool = match Connection::create_connection().await {
+        Ok(pool) => pool,
+        Err(e) => {
+            log::error!("Failed to create a db connection: {}", e);
+            return;
+        }
+    };
     log::info!("Get existing schedule from DB");
     let class_repo = ClassRepository::new(&pool);
     let (mut db_classes_res, repo_data_res) =
-        tokio::try_join!(class_repo.get_schedule(), prepare_data(&pool)).map_err(|e| {
-            log::error!("Error getting schedule: {}", e);
-            e
-        })?;
+        match tokio::try_join!(class_repo.get_schedule(), prepare_data(&pool)) {
+            Ok((db_classes_res, repo_data_res)) => (db_classes_res, repo_data_res),
+            Err(e) => {
+                log::error!("Error getting schedule: {}", e);
+                return;
+            }
+        };
 
     log::info!("Get latest schedule from Excel");
-    let excel = Excel::new(
+    let excel = match Excel::new(
         file,
         sheet,
         repo_data_res.0,
         repo_data_res.1,
         repo_data_res.2,
-    )
-    .with_context(|| "Error opening excel file")?;
+    ) {
+        Ok(excel) => excel,
+        Err(e) => {
+            log::error!("Error opening excel file: {}", e);
+            return;
+        }
+    };
     let excel_classes: Vec<ClassFromSchedule> = excel.get_schedule();
 
     log::info!(
@@ -63,13 +75,15 @@ pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> R
         deleted.len()
     );
     log::info!("Write the result to {:?}", &outdir);
-    OutWriter::new(outdir)
+    if let Err(e) = OutWriter::new(outdir)
         .await
-        .with_context(|| format!("Error creating {:?}", outdir))?
+        .unwrap()
         .write_compare_result(&added, &changed, &deleted)
         .await
-        .with_context(|| "Error writing result")?;
+    {
+        log::error!("Error writing result: {}", e);
+        return;
+    };
 
     pool.close().await;
-    Ok(())
 }

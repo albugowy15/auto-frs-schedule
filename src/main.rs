@@ -3,7 +3,6 @@ mod db;
 mod utils;
 
 use crate::utils::env;
-use anyhow::Result;
 use clap::Parser;
 use commands::Commands;
 
@@ -15,9 +14,11 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
+    // setup env for logger and rust backtrace
     env::setup_env();
 
+    // parse cli command and args from struct
     let cli = Cli::parse();
 
     match &cli.command {
@@ -26,12 +27,12 @@ async fn main() -> Result<()> {
             file,
             sheet,
             outdir,
-        } => commands::update::update_handler(push, file, sheet, outdir).await?,
+        } => commands::update::update_handler(push, file, sheet, outdir).await,
         Commands::Compare {
             file,
             sheet,
             outdir,
-        } => commands::compare::compare_handler(file, sheet, outdir).await?,
+        } => commands::compare::compare_handler(file, sheet, outdir).await,
         Commands::Clean => {
             commands::clean::clean_handler().await;
         }
@@ -41,5 +42,4 @@ async fn main() -> Result<()> {
     }
 
     log::info!("Done");
-    Ok(())
 }

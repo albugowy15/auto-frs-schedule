@@ -4,7 +4,13 @@ use crate::db::{
 };
 
 pub async fn sync_handler() {
-    let pool = Connection::create_connection().await.unwrap();
+    let pool = match Connection::create_connection().await {
+        Ok(pool) => pool,
+        Err(e) => {
+            log::error!("Failed to create a db connection: {}", e);
+            return;
+        }
+    };
     log::info!("Sync taken from Class");
     let class_repo = ClassRepository::new(&pool);
 

@@ -1,7 +1,5 @@
 use std::{path::PathBuf, sync::Arc};
 
-use anyhow::{Context, Result};
-
 use crate::{
     commands::prepare_data,
     db::{
@@ -14,23 +12,34 @@ use crate::{
     },
 };
 
-pub async fn update_handler(
-    push: &bool,
-    file: &PathBuf,
-    sheet: &String,
-    outdir: &Option<PathBuf>,
-) -> Result<()> {
-    let pool = Connection::create_connection().await?;
-    let repo_data = prepare_data(&pool).await?;
+pub async fn update_handler(push: &bool, file: &PathBuf, sheet: &String, outdir: &Option<PathBuf>) {
+    let pool = match Connection::create_connection().await {
+        Ok(pool) => pool,
+        Err(e) => {
+            log::error!("Failed to create a db connection: {}", e);
+            return;
+        }
+    };
+    let repo_data = match prepare_data(&pool).await {
+        Ok(repo_data) => repo_data,
+        Err(e) => {
+            log::error!("Failed prepare initial data: {}", e);
+            return;
+        }
+    };
     log::info!("Parse class schedule from Excel");
-    let excel =
-        Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2).with_context(|| {
-            format!(
-                "Error opening {} with sheet name '{:?}'",
+    let excel = match Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2) {
+        Ok(excel) => excel,
+        Err(e) => {
+            log::error!(
+                "Error opening {} with sheet name '{:?}': {}",
                 &file.display(),
                 &sheet,
-            )
-        })?;
+                e
+            );
+            return;
+        }
+    };
 
     let list_class = Arc::new(excel.get_schedule());
     let mut handles = Vec::new();
@@ -63,8 +72,9 @@ pub async fn update_handler(
         handles.push(handle);
     }
     for handle in handles {
-        handle.await?;
+        if let Err(e) = handle.await {
+            log::error!("Thread error: {}", e)
+        };
     }
     pool.close().await;
-    Ok(())
 }
