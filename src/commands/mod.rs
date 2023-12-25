@@ -66,13 +66,6 @@ pub async fn prepare_data(
         subject_repo.get_all_subjects(),
         lecturer_repo.get_all_lecturers(),
         session_repo.get_all_sessions()
-    )
-    .map_err(|e| {
-        log::error!(
-            "Error retrieve subjects, lecturers, and session from DB: {}",
-            e
-        );
-        e
-    })?;
+    )?;
     Ok((subjects, lecturers, sessions))
 }

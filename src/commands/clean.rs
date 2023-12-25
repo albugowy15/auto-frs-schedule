@@ -19,6 +19,7 @@ pub async fn clean_handler() {
         many_to_many_repo.drop_invalid_class_to_lecturer()
     ) {
         log::error!("Cleaning failed: {}", e);
+        return;
     }
     pool.close().await;
 }

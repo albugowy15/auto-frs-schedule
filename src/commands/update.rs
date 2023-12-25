@@ -73,7 +73,8 @@ pub async fn update_handler(push: &bool, file: &PathBuf, sheet: &String, outdir:
     }
     for handle in handles {
         if let Err(e) = handle.await {
-            log::error!("Thread error: {}", e)
+            log::error!("Thread error: {}", e);
+            return;
         };
     }
     pool.close().await;
