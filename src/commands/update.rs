@@ -3,7 +3,7 @@ use std::{path::PathBuf, sync::Arc};
 use crate::{
     commands::prepare_data,
     db::{
-        repository::{class_repository::ClassRepository, Repository},
+        repository::{class::ClassRepository, Repository},
         Connection,
     },
     utils::{

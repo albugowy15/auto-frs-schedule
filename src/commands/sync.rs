@@ -1,5 +1,5 @@
 use crate::db::{
-    repository::{class_repository::ClassRepository, plan_repository::PlanRepository, Repository},
+    repository::{class::ClassRepository, plan::PlanRepository, Repository},
     Connection,
 };
 

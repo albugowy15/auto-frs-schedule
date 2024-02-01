@@ -1,4 +1,4 @@
-use crate::db::repository::class_repository::Class;
+use crate::db::repository::class::Class;
 
 use super::{AsIdParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser, DAYS};
 

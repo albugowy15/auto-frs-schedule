@@ -3,7 +3,7 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use tokio::{fs::File, io::AsyncWriteExt};
 
-use crate::db::repository::class_repository::{Class, ClassFromSchedule};
+use crate::db::repository::class::{Class, ClassFromSchedule};
 
 enum CompareVecResult<'a> {
     DBAndExcel(&'a Vec<(ClassFromSchedule, ClassFromSchedule)>),

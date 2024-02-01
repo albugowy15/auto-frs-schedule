@@ -5,8 +5,8 @@ use clap::Subcommand;
 use sqlx::{MySql, Pool};
 
 use crate::db::repository::{
-    lecturer_repository::LecturerRepository, session_repository::SessionRepository,
-    subject_repository::SubjectRepository, Repository,
+    lecturer::LecturerRepository, session::SessionRepository, subject::SubjectRepository,
+    Repository,
 };
 
 pub mod clean;

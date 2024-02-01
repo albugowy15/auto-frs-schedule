@@ -1,4 +1,4 @@
-use crate::db::repository::class_repository::ClassFromSchedule;
+use crate::db::repository::class::ClassFromSchedule;
 
 use super::{AsStringParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser, DAYS};
 

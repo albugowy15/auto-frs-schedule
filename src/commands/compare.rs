@@ -4,7 +4,7 @@ use crate::{
     commands::prepare_data,
     db::{
         repository::{
-            class_repository::{ClassFromSchedule, ClassRepository},
+            class::{ClassFromSchedule, ClassRepository},
             Repository,
         },
         Connection,
