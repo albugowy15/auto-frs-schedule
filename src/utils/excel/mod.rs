@@ -3,37 +3,32 @@ pub mod retrieve;
 pub mod schedule_parser;
 pub mod schedule_parser_with_id;
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
 
+use crate::db::repository::LecturerSubjectSessionMap;
+
 pub const DAYS: [&str; 5] = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
 
 pub struct Excel {
     range: Range<DataType>,
-    subject_to_id: HashMap<String, String>,
-    lecturer_to_id: HashMap<String, String>,
-    session_to_id: HashMap<String, i8>,
+    lecturer_subjects_session_map: LecturerSubjectSessionMap,
 }
 
 impl Excel {
     pub fn new(
         file_path: &PathBuf,
         sheet_name: &str,
-        subject_to_id: HashMap<String, String>,
-        lecturer_to_id: HashMap<String, String>,
-        session_to_id: HashMap<String, i8>,
+        lecturer_subjects_session_map: LecturerSubjectSessionMap,
     ) -> Result<Self> {
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| "Cannot open excel file")?;
         let range = excel.worksheet_range(sheet_name)?;
         Ok(Self {
             range,
-            subject_to_id,
-            lecturer_to_id,
-            session_to_id,
+            lecturer_subjects_session_map,
         })
     }
 }

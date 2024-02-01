@@ -1,9 +1,8 @@
 use std::{path::PathBuf, sync::Arc};
 
 use crate::{
-    commands::prepare_data,
     db::{
-        repository::{class::ClassRepository, Repository},
+        repository::{class::ClassRepository, prepare_data, Repository},
         Connection,
     },
     utils::{
@@ -28,7 +27,7 @@ pub async fn update_handler(push: &bool, file: &PathBuf, sheet: &String, outdir:
         }
     };
     log::info!("Parse class schedule from Excel");
-    let excel = match Excel::new(file, sheet, repo_data.0, repo_data.1, repo_data.2) {
+    let excel = match Excel::new(file, sheet, repo_data) {
         Ok(excel) => excel,
         Err(e) => {
             log::error!(

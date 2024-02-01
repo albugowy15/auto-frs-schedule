@@ -1,11 +1,10 @@
 use std::path::PathBuf;
 
 use crate::{
-    commands::prepare_data,
     db::{
         repository::{
             class::{ClassFromSchedule, ClassRepository},
-            Repository,
+            prepare_data, Repository,
         },
         Connection,
     },
@@ -35,13 +34,7 @@ pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
         };
 
     log::info!("Get latest schedule from Excel");
-    let excel = match Excel::new(
-        file,
-        sheet,
-        repo_data_res.0,
-        repo_data_res.1,
-        repo_data_res.2,
-    ) {
+    let excel = match Excel::new(file, sheet, repo_data_res) {
         Ok(excel) => excel,
         Err(e) => {
             log::error!("Error opening excel file: {}", e);

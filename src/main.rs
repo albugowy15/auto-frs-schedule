@@ -5,7 +5,7 @@ use auto_frs_schedule::{
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(version, about)]
+#[command(version, author, about)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

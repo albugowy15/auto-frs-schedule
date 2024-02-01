@@ -5,7 +5,8 @@ use super::{AsStringParser, Excel, Parser, Retrieve, ScheduleParser, SessionPars
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
         let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
-        self.subject_to_id
+        self.lecturer_subjects_session_map
+            .subjects
             .get(&subject_name.to_lowercase())
             .map(|_| (subject_name, code))
     }
@@ -16,7 +17,11 @@ impl AsStringParser for Excel {
         let lecturers_code: Vec<String> = lecturers
             .into_iter()
             .flat_map(|lecture_code| {
-                let code = match self.lecturer_to_id.contains_key(lecture_code.trim()) {
+                let code = match self
+                    .lecturer_subjects_session_map
+                    .lecturers
+                    .contains_key(lecture_code.trim())
+                {
                     true => lecture_code.trim().to_string(),
                     false => "UNK".to_string(),
                 };
@@ -35,7 +40,8 @@ impl SessionParser<String> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<String> {
         let session_str = self.retrieve_session(row_idx)?;
         let session_name = Excel::parse_session(&session_str)?;
-        self.session_to_id
+        self.lecturer_subjects_session_map
+            .sessions
             .contains_key(&session_name)
             .then_some(session_name)
     }
@@ -82,6 +88,8 @@ mod tests {
 
     use calamine::Range;
 
+    use crate::db::repository::LecturerSubjectSessionMap;
+
     use super::*;
 
     #[test]
@@ -94,9 +102,11 @@ mod tests {
         );
 
         let excel = Excel {
-            subject_to_id,
-            lecturer_to_id: HashMap::new(),
-            session_to_id: HashMap::new(),
+            lecturer_subjects_session_map: LecturerSubjectSessionMap {
+                subjects: subject_to_id,
+                lecturers: HashMap::new(),
+                sessions: HashMap::new(),
+            },
             range: Range::new((0, 0), (100, 100)),
         };
 

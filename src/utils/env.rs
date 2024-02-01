@@ -10,7 +10,6 @@ pub fn setup_env() {
     env::set_var("AUTO_FRS_SCHEDULE_LOG_LEVEL", "INFO");
     env::set_var("AUTO_FRS_SCHEDULE_LOG_STYLE", "AUTO");
     Builder::from_env(env)
-        .format_timestamp(None)
         .format_module_path(false)
         .format_target(false)
         .init();

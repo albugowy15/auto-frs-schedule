@@ -1,13 +1,6 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
-use anyhow::Result;
 use clap::Subcommand;
-use sqlx::{MySql, Pool};
-
-use crate::db::repository::{
-    lecturer::LecturerRepository, session::SessionRepository, subject::SubjectRepository,
-    Repository,
-};
 
 pub mod clean;
 pub mod compare;
@@ -16,6 +9,9 @@ pub mod update;
 
 #[derive(Subcommand)]
 pub enum Commands {
+    #[command(
+        long_about = "Compares the class schedule stored in the database with the latest data from an Excel file."
+    )]
     Compare {
         #[arg(short, long, value_name = "Required for latest schedule excel file")]
         file: PathBuf,
@@ -26,6 +22,9 @@ pub enum Commands {
         #[arg(short, long, value_name = "Required for output path")]
         outdir: PathBuf,
     },
+    #[command(
+        long_about = "Parses all class data from an Excel file and subsequently updates the MySQL database. Alternatively, it provides an option to save the parsed data to an SQL file."
+    )]
     Update {
         #[arg(
             short,
@@ -47,25 +46,12 @@ pub enum Commands {
         )]
         outdir: Option<PathBuf>,
     },
+    #[command(
+        long_about = "Removes any invalid foreign keys present in the _ClassToPlan and _ClassToLecturer tables."
+    )]
     Clean,
+    #[command(
+        long_about = "Synchronizes the taken field in the Class table and the totalSks field in the Plan table to reflect their current values."
+    )]
     Sync,
-}
-
-pub async fn prepare_data(
-    pool: &Pool<MySql>,
-) -> Result<(
-    HashMap<String, String>,
-    HashMap<String, String>,
-    HashMap<String, i8>,
-)> {
-    log::info!("Get all subjects from DB");
-    let lecturer_repo = LecturerRepository::new(pool);
-    let subject_repo = SubjectRepository::new(pool);
-    let session_repo = SessionRepository::new(pool);
-    let (subjects, lecturers, sessions) = tokio::try_join!(
-        subject_repo.get_all_subjects(),
-        lecturer_repo.get_all_lecturers(),
-        session_repo.get_all_sessions()
-    )?;
-    Ok((subjects, lecturers, sessions))
 }

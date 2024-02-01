@@ -5,7 +5,8 @@ use super::{AsIdParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser, 
 impl AsIdParser for Excel {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
         let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
-        self.subject_to_id
+        self.lecturer_subjects_session_map
+            .subjects
             .get(&subject_name.to_lowercase())
             .map(|val| (val.to_string(), code))
     }
@@ -16,7 +17,8 @@ impl AsIdParser for Excel {
         let lecturers_id: Vec<String> = lecturers
             .into_iter()
             .map(|lecture_code| {
-                self.lecturer_to_id
+                self.lecturer_subjects_session_map
+                    .lecturers
                     .get(lecture_code.trim())
                     .unwrap_or(&"UNK".to_string())
                     .to_string()
@@ -31,7 +33,10 @@ impl SessionParser<i8> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<i8> {
         let session_str = self.retrieve_session(row_idx)?;
         let session_name = Excel::parse_session(&session_str)?;
-        self.session_to_id.get(&session_name).cloned()
+        self.lecturer_subjects_session_map
+            .sessions
+            .get(&session_name)
+            .cloned()
     }
 }
 
@@ -77,6 +82,8 @@ mod tests {
 
     use calamine::Range;
 
+    use crate::db::repository::LecturerSubjectSessionMap;
+
     use super::*;
 
     #[test]
@@ -89,9 +96,11 @@ mod tests {
         );
 
         let excel = Excel {
-            subject_to_id,
-            lecturer_to_id: HashMap::new(),
-            session_to_id: HashMap::new(),
+            lecturer_subjects_session_map: LecturerSubjectSessionMap {
+                subjects: subject_to_id,
+                lecturers: HashMap::new(),
+                sessions: HashMap::new(),
+            },
             range: Range::new((0, 0), (100, 100)),
         };
 
