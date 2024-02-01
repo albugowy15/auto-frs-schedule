@@ -1,10 +1,8 @@
-mod commands;
-mod db;
-mod utils;
-
-use crate::utils::env;
+use auto_frs_schedule::{
+    commands::{self, Commands},
+    utils::env,
+};
 use clap::Parser;
-use commands::Commands;
 
 #[derive(Parser)]
 #[command(version, about)]
