@@ -1,6 +1,6 @@
 [package]
 name = "auto-frs-schedule"
-version = "2.5.1"
+version = "2.6.0"
 edition = "2021"
 description = "Automatically generate TC FRS schedule from Excel file"
 authors = ["Mohamad Kholid Bughowi <kholidbughowi@gmail.com>"]

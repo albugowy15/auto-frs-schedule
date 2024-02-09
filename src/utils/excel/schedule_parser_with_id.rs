@@ -106,13 +106,13 @@ mod tests {
         };
 
         // Test the get_subject_with_code method
-        let result = excel.get_subject_id_with_code("Jaringan Komputer C");
+        let result = excel.get_subject_id_with_code("Jaringan Komputer - C");
         assert_eq!(
             result,
             Some(("c6hhfe7737483833".to_string(), "C".to_string()))
         );
 
-        let result = excel.get_subject_id_with_code("Physics P101");
+        let result = excel.get_subject_id_with_code("Physics - P101");
         assert_eq!(result, None);
     }
 }
