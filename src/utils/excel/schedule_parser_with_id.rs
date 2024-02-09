@@ -1,10 +1,11 @@
-use crate::db::repository::class::Class;
+use crate::{db::repository::class::Class, DAYS};
+use calamine::DataType;
 
-use super::{AsIdParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser, DAYS};
+use super::{AsIdParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser};
 
 impl AsIdParser for Excel {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
+        let (subject_name, code) = Self::parse_subject_with_code(val)?;
         self.lecturer_subjects_session_map
             .subjects
             .get(&subject_name.to_lowercase())

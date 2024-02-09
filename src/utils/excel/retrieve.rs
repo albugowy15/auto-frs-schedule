@@ -1,4 +1,5 @@
 use super::{Excel, Retrieve};
+use calamine::DataType;
 
 impl Retrieve for Excel {
     fn retrieve_class_detail(&self, row_idx: u32, col_idx: u32) -> Option<String> {

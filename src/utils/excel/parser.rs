@@ -19,7 +19,7 @@ impl<'a> Parser<'a> for Excel {
         session_str.split(" - ").next().map(|s| s.to_string())
     }
 
-    fn parse_subject_with_code_2(val: &str) -> Option<(String, String)> {
+    fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
         // Different parse method for each kind of class code
         // CASE 1: (EN) + IUP
         if val.contains("(EN) + IUP") {
@@ -74,35 +74,6 @@ impl<'a> Parser<'a> for Excel {
             }
         }
         None
-    }
-
-    fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
-        let splitted: Vec<&str> = val.split('-').collect();
-        let subject_name: String;
-        let code: String;
-        if splitted.len() < 2 {
-            let split_space: Vec<&str> = val.split_ascii_whitespace().collect();
-            let last_str = split_space.last()?.trim();
-            if last_str.len() == 1 && last_str <= "L" {
-                subject_name = split_space[0..(split_space.len() - 1)].join(" ");
-                code = last_str.to_string()
-            } else {
-                subject_name = split_space.join(" ");
-                code = "-".to_owned();
-            }
-        } else {
-            let last_split = splitted.last()?.trim();
-            if last_split.contains("EN") {
-                let split_space: Vec<&str> = splitted[0].split_ascii_whitespace().collect();
-                subject_name = split_space[0..(split_space.len() - 1)].join(" ");
-                code = format!("{} - {}", split_space.last()?, "EN");
-            } else {
-                subject_name = splitted[0].trim().to_owned();
-                code = splitted[1].trim().to_owned();
-            }
-        }
-
-        Some((subject_name, code))
     }
 }
 
@@ -171,7 +142,7 @@ mod tests {
         ];
         test_cases.into_iter().for_each(|case| {
             assert_eq!(
-                Excel::parse_subject_with_code_2(&case.class),
+                Excel::parse_subject_with_code(&case.class),
                 Some((case.subject_name, case.subject_code))
             );
         });

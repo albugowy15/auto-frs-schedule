@@ -3,7 +3,7 @@ use std::{path::PathBuf, sync::Arc};
 use crate::{
     db::{
         repository::{class::ClassRepository, prepare_data, Repository},
-        Connection,
+        Database,
     },
     utils::{
         excel::{Excel, ScheduleParser},
@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub async fn update_handler(push: &bool, file: &PathBuf, sheet: &String, outdir: &Option<PathBuf>) {
-    let pool = match Connection::create_connection().await {
+    let pool = match Database::create_connection().await {
         Ok(pool) => pool,
         Err(e) => {
             log::error!("Failed to create a db connection: {}", e);

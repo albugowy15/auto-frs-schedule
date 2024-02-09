@@ -1,10 +1,10 @@
 use crate::db::{
     repository::{class::ClassRepository, plan::PlanRepository, Repository},
-    Connection,
+    Database,
 };
 
 pub async fn sync_handler() {
-    let pool = match Connection::create_connection().await {
+    let pool = match Database::create_connection().await {
         Ok(pool) => pool,
         Err(e) => {
             log::error!("Failed to create a db connection: {}", e);

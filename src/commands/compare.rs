@@ -6,7 +6,7 @@ use crate::{
             class::{ClassFromSchedule, ClassRepository},
             prepare_data, Repository,
         },
-        Connection,
+        Database,
     },
     utils::{
         excel::{Excel, ScheduleParser},
@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
-    let pool = match Connection::create_connection().await {
+    let pool = match Database::create_connection().await {
         Ok(pool) => pool,
         Err(e) => {
             log::error!("Failed to create a db connection: {}", e);

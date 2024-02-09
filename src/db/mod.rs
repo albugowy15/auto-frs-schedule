@@ -5,9 +5,9 @@ use std::env;
 use anyhow::{Context, Result};
 use sqlx::{mysql::MySqlPoolOptions, MySqlPool};
 
-pub struct Connection;
+pub struct Database;
 
-impl Connection {
+impl Database {
     pub async fn create_connection() -> Result<MySqlPool> {
         let db_url =
             env::var("FRS_HELPER_DB_URL").with_context(|| "FRS_HELPER_DB_URL must be set")?;
@@ -29,7 +29,7 @@ mod tests {
         env::remove_var("FRS_HELPER_DB_URL");
 
         // Call the function
-        let result = Connection::create_connection().await;
+        let result = Database::create_connection().await;
 
         // Check if an error is returned
         assert!(result.is_err());

@@ -6,14 +6,12 @@ pub mod schedule_parser_with_id;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use calamine::{open_workbook, DataType, Range, Reader, Xlsx};
+use calamine::{open_workbook, Data, Range, Reader, Xlsx};
 
 use crate::db::repository::LecturerSubjectSessionMap;
 
-pub const DAYS: [&str; 5] = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at"];
-
 pub struct Excel {
-    range: Range<DataType>,
+    range: Range<Data>,
     lecturer_subjects_session_map: LecturerSubjectSessionMap,
 }
 
@@ -39,10 +37,9 @@ pub trait Retrieve {
 }
 
 pub trait Parser<'a> {
-    fn parse_subject_with_code(val: &str) -> Option<(String, String)>;
     fn parse_lecturer(class_detail_str: &'a str) -> Option<Vec<&'a str>>;
     fn parse_session(session_str: &str) -> Option<String>;
-    fn parse_subject_with_code_2(val: &str) -> Option<(String, String)>;
+    fn parse_subject_with_code(val: &str) -> Option<(String, String)>;
 }
 
 trait AsIdParser {

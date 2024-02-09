@@ -1,10 +1,11 @@
-use crate::db::repository::class::ClassFromSchedule;
+use crate::{db::repository::class::ClassFromSchedule, DAYS};
+use calamine::DataType;
 
-use super::{AsStringParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser, DAYS};
+use super::{AsStringParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser};
 
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {
-        let (subject_name, code) = Self::parse_subject_with_code_2(val)?;
+        let (subject_name, code) = Self::parse_subject_with_code(val)?;
         self.lecturer_subjects_session_map
             .subjects
             .get(&subject_name.to_lowercase())

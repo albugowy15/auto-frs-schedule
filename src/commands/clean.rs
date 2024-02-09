@@ -2,11 +2,11 @@ use tokio::try_join;
 
 use crate::db::{
     repository::{many_to_many::ManyToManyRepository, Repository},
-    Connection,
+    Database,
 };
 
 pub async fn clean_handler() {
-    let pool = match Connection::create_connection().await {
+    let pool = match Database::create_connection().await {
         Ok(pool) => pool,
         Err(e) => {
             log::error!("Failed to create a db connection: {}", e);
