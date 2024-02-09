@@ -15,18 +15,22 @@ impl AsIdParser for Excel {
     fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>> {
         let lecturers_str = self.retrieve_class_detail(row, col)?;
         let lecturers = Excel::parse_lecturer(&lecturers_str)?;
+        let unk_id = self
+            .lecturer_subjects_session_map
+            .lecturers
+            .get(&String::from("UNK"))?
+            .to_string();
         let lecturers_id: Vec<String> = lecturers
             .into_iter()
-            .map(|lecture_code| {
+            .map(|lecturer_code| {
                 self.lecturer_subjects_session_map
                     .lecturers
-                    .get(lecture_code.trim())
-                    .unwrap_or(&"UNK".to_string())
+                    .get(lecturer_code.trim())
+                    .unwrap_or(&unk_id)
                     .to_string()
             })
             .collect();
-
-        lecturers_id.into_iter().next().map(|first| vec![first])
+        Some(lecturers_id)
     }
 }
 
@@ -64,13 +68,14 @@ impl ScheduleParser<Class> for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                list_class.push(Class {
+                let data = Class {
                     matkul_id: subject_id,
                     lecturers_id,
                     day: day.to_string(),
                     code: class_code,
                     session_id,
-                });
+                };
+                list_class.push(data);
             }
         }
         list_class

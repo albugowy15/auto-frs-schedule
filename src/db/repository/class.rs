@@ -19,7 +19,7 @@ pub struct Class {
     pub session_id: i8,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct ClassFromSchedule {
     pub subject_name: String,
     pub class_code: String,
@@ -86,7 +86,7 @@ impl ClassRepository<'_> {
     }
 
     #[allow(deprecated)]
-    pub async fn insert_classes(&self, data: &Vec<Class>) -> Result<()> {
+    pub async fn insert_classes(&self, data: &[Class]) -> Result<()> {
         let mut tx = self.db_pool.begin().await?;
         Self::drop_old_classes(&mut tx)
             .await

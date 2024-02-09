@@ -70,13 +70,14 @@ impl ScheduleParser<ClassFromSchedule> for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                list_class.push(ClassFromSchedule {
+                let data = ClassFromSchedule {
                     subject_name,
                     class_code,
                     lecturer_code: lecturers,
                     day: day.to_string(),
                     session_start,
-                })
+                };
+                list_class.push(data);
             }
         }
         list_class

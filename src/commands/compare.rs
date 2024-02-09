@@ -53,7 +53,13 @@ pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
         let key = (class.subject_name.clone(), class.class_code.clone());
         if let Some(val) = db_classes_res.get(&key) {
             if !val.eq(&class) {
-                changed.push((val.clone(), class.clone()));
+                let mut db_lec_codes = val.lecturer_code.clone();
+                db_lec_codes.sort();
+                let mut excel_lec_codes = class.lecturer_code.clone();
+                excel_lec_codes.sort();
+                if !db_lec_codes.eq(&excel_lec_codes) {
+                    changed.push((val.clone(), class.clone()));
+                }
             }
             db_classes_res.remove(&key).unwrap();
         } else {
