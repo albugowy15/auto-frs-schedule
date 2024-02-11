@@ -139,10 +139,8 @@ impl ClassRepository<'_> {
                 })?;
             bar.inc(1);
         }
-        bar.finish_with_message(format!(
-            "Done inserting {} classes to Class table",
-            data.len()
-        ));
+        bar.finish_and_clear();
+        log::info!("Done inserting {} classes to Class table", data.len());
         log::info!("Inserting non-class subject");
         Self::insert_non_classes(&mut tx).await?;
         tx.commit().await?;

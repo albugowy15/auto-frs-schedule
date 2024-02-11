@@ -4,10 +4,12 @@ use anyhow::{Error, Result};
 use sqlx::MySqlPool;
 
 use crate::{
-    commands::create_db_connection,
-    db::repository::{
-        class::{ClassFromSchedule, ClassRepository},
-        prepare_data, LecturerSubjectSessionMap, Repository,
+    db::{
+        self,
+        repository::{
+            class::{ClassFromSchedule, ClassRepository},
+            prepare_data, LecturerSubjectSessionMap, Repository,
+        },
     },
     utils::{
         excel::{Excel, ScheduleParser},
@@ -80,17 +82,25 @@ fn compare_schedule(
 }
 
 pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
-    let pool = Arc::new(create_db_connection().await.unwrap());
+    let pool = match db::Database::create_connection().await {
+        Ok(pool) => Arc::new(pool),
+        Err(e) => {
+            log::error!("{}", e);
+            return;
+        }
+    };
     log::info!("Get existing schedule from DB");
 
     let class_repo_schedule_task = spawn_get_schedule(&pool);
     let prepare_data_task = spawn_prepare_data(&pool);
     let (db_classes_res, repo_data_res) =
-        tokio::try_join!(class_repo_schedule_task, prepare_data_task)
-            .map_err(|e| {
-                log::error!("Thread error: {}", e);
-            })
-            .unwrap();
+        match tokio::try_join!(class_repo_schedule_task, prepare_data_task) {
+            Ok((db, repo)) => (db, repo),
+            Err(e) => {
+                log::error!("{}", e);
+                return;
+            }
+        };
 
     let db_classes = match db_classes_res {
         Ok(res) => res,
@@ -131,9 +141,16 @@ pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
         deleted.len()
     );
     log::info!("Write the result to {:?}", &outdir);
-    if let Err(e) = OutWriter::new(outdir)
-        .await
-        .unwrap()
+
+    let mut writer = match OutWriter::new(outdir).await {
+        Ok(writer) => writer,
+        Err(e) => {
+            log::error!("{}", e);
+            return;
+        }
+    };
+
+    if let Err(e) = writer
         .write_compare_result(&added, &changed, &deleted)
         .await
     {

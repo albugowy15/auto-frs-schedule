@@ -3,10 +3,12 @@ use std::{path::PathBuf, sync::Arc};
 use sqlx::MySqlPool;
 
 use crate::{
-    commands::create_db_connection,
-    db::repository::{
-        class::{Class, ClassRepository},
-        prepare_data, Repository,
+    db::{
+        self,
+        repository::{
+            class::{Class, ClassRepository},
+            prepare_data, Repository,
+        },
     },
     utils::{
         excel::{Excel, ScheduleParser},
@@ -43,7 +45,13 @@ fn write_change_to_output_file(
 }
 
 pub async fn update_handler(push: &bool, file: &PathBuf, sheet: &String, outdir: &Option<PathBuf>) {
-    let pool = Arc::new(create_db_connection().await.unwrap());
+    let pool = match db::Database::create_connection().await {
+        Ok(pool) => Arc::new(pool),
+        Err(e) => {
+            log::error!("{}", e);
+            return;
+        }
+    };
     let repo_data = match prepare_data(&pool).await {
         Ok(repo_data) => repo_data,
         Err(e) => {

@@ -1,12 +1,18 @@
 use tokio::try_join;
 
-use crate::{
-    commands::create_db_connection,
-    db::repository::{many_to_many::ManyToManyRepository, Repository},
+use crate::db::{
+    self,
+    repository::{many_to_many::ManyToManyRepository, Repository},
 };
 
 pub async fn clean_handler() {
-    let pool = create_db_connection().await.unwrap();
+    let pool = match db::Database::create_connection().await {
+        Ok(pool) => pool,
+        Err(e) => {
+            log::error!("{}", e);
+            return;
+        }
+    };
     log::info!("Clean up invalid foreign key");
     let many_to_many_repo = ManyToManyRepository::new(&pool);
 

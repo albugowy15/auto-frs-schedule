@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use sqlx::MySqlPool;
 
-use crate::{
-    commands::create_db_connection,
-    db::repository::{class::ClassRepository, plan::PlanRepository, Repository},
+use crate::db::{
+    self,
+    repository::{class::ClassRepository, plan::PlanRepository, Repository},
 };
 
 fn sync_taken(pool: &Arc<MySqlPool>) -> tokio::task::JoinHandle<()> {
@@ -30,7 +30,13 @@ fn sync_total_sks(pool: &Arc<MySqlPool>) -> tokio::task::JoinHandle<()> {
 }
 
 pub async fn sync_handler() {
-    let pool = Arc::new(create_db_connection().await.unwrap());
+    let pool = match db::Database::create_connection().await {
+        Ok(pool) => Arc::new(pool),
+        Err(e) => {
+            log::error!("{}", e);
+            return;
+        }
+    };
 
     if let Err(e) = tokio::try_join!(sync_taken(&pool), sync_total_sks(&pool)) {
         log::error!("Error syncing: {}", e);
