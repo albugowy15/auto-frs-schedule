@@ -1,23 +1,38 @@
-use crate::db::{
-    repository::{class::ClassRepository, plan::PlanRepository, Repository},
-    Database,
+use std::sync::Arc;
+
+use sqlx::MySqlPool;
+
+use crate::{
+    commands::create_db_connection,
+    db::repository::{class::ClassRepository, plan::PlanRepository, Repository},
 };
 
+fn sync_taken(pool: &Arc<MySqlPool>) -> tokio::task::JoinHandle<()> {
+    let cloned_pool = pool.clone();
+    tokio::task::spawn(async move {
+        log::info!("Sync taken from Class");
+        ClassRepository::new(&cloned_pool)
+            .sync_taken()
+            .await
+            .unwrap();
+    })
+}
+
+fn sync_total_sks(pool: &Arc<MySqlPool>) -> tokio::task::JoinHandle<()> {
+    let cloned_pool = pool.clone();
+    tokio::task::spawn(async move {
+        log::info!("Sync totalSks from Plan");
+        PlanRepository::new(&cloned_pool)
+            .sync_total_sks()
+            .await
+            .unwrap();
+    })
+}
+
 pub async fn sync_handler() {
-    let pool = match Database::create_connection().await {
-        Ok(pool) => pool,
-        Err(e) => {
-            log::error!("Failed to create a db connection: {}", e);
-            return;
-        }
-    };
-    log::info!("Sync taken from Class");
-    let class_repo = ClassRepository::new(&pool);
+    let pool = Arc::new(create_db_connection().await.unwrap());
 
-    log::info!("Sync totalSks from Plan");
-    let plan_repo = PlanRepository::new(&pool);
-
-    if let Err(e) = tokio::try_join!(class_repo.sync_taken(), plan_repo.sync_total_sks()) {
+    if let Err(e) = tokio::try_join!(sync_taken(&pool), sync_total_sks(&pool)) {
         log::error!("Error syncing: {}", e);
         return;
     }

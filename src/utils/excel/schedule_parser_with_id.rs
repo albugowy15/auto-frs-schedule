@@ -1,4 +1,4 @@
-use crate::{db::repository::class::Class, DAYS};
+use crate::{db::repository::class::Class, DAYS, DAY_OFFSET};
 use calamine::DataType;
 
 use super::{AsIdParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser};
@@ -63,7 +63,7 @@ impl ScheduleParser<Class> for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                let day = DAYS[row_idx / 14];
+                let day = DAYS[row_idx / DAY_OFFSET];
                 let session_id = match self.get_session(row_idx as u32) {
                     Some(val) => val,
                     None => continue,

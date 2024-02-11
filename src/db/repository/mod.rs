@@ -17,10 +17,21 @@ pub trait Repository<'a> {
     fn new(db_pool: &'a Pool<MySql>) -> Self;
 }
 
+#[derive(Default)]
 pub struct LecturerSubjectSessionMap {
     pub subjects: HashMap<String, String>,
     pub lecturers: HashMap<String, String>,
     pub sessions: HashMap<String, i8>,
+}
+
+impl LecturerSubjectSessionMap {
+    pub fn new() -> Self {
+        Self {
+            subjects: HashMap::new(),
+            lecturers: HashMap::new(),
+            sessions: HashMap::new(),
+        }
+    }
 }
 
 pub async fn prepare_data(pool: &Pool<MySql>) -> Result<LecturerSubjectSessionMap> {

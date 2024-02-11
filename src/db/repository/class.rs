@@ -28,6 +28,14 @@ pub struct ClassFromSchedule {
     pub session_start: String,
 }
 
+#[derive(PartialEq, Clone, Debug)]
+pub struct ClassFindSchedule {
+    pub class: String,
+    pub lecturers_code: Vec<String>,
+    pub day: String,
+    pub session_start: String,
+}
+
 impl<'a> Repository<'a> for ClassRepository<'a> {
     fn new(db_pool: &'a Pool<MySql>) -> Self {
         ClassRepository { db_pool }

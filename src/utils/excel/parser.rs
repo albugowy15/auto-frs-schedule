@@ -2,13 +2,13 @@ use std::cmp;
 
 use super::{Excel, Parser};
 
-impl<'a> Parser<'a> for Excel {
-    fn parse_lecturer(class_detail_str: &'a str) -> Option<Vec<&'a str>> {
-        let lecturers: Vec<&str> = class_detail_str
+impl Parser for Excel {
+    fn parse_lecturer(class_detail_str: &str) -> Option<Vec<String>> {
+        let lecturers: Vec<String> = class_detail_str
             .split('/')
             .nth(2)?
             .split('-')
-            .map(|lec| lec.trim())
+            .map(|lec| lec.trim().to_string())
             .collect();
         if lecturers.is_empty() {
             None
@@ -219,30 +219,30 @@ mod tests {
     // }
     #[test]
     fn test_parse_lecturer_from_class_detail() {
-        struct TestCase<'a> {
+        struct TestCase {
             class_detail: String,
-            lecturers: Vec<&'a str>,
+            lecturers: Vec<String>,
         }
         let test_cases: Vec<TestCase> = vec![
             TestCase {
                 class_detail: String::from("2 sks/ Sem 7 / AM - WN"),
-                lecturers: vec!["AM", "WN"],
+                lecturers: vec!["AM".to_string(), "WN".to_string()],
             },
             TestCase {
                 class_detail: String::from("4 sks / Sem 2 / CF"),
-                lecturers: vec!["CF"],
+                lecturers: vec!["CF".to_string()],
             },
             TestCase {
                 class_detail: String::from("3 sks / Sem 1 / DH"),
-                lecturers: vec!["DH"],
+                lecturers: vec!["DH".to_string()],
             },
             TestCase {
                 class_detail: String::from("3 sks / Sem 1 / DO"),
-                lecturers: vec!["DO"],
+                lecturers: vec!["DO".to_string()],
             },
             TestCase {
                 class_detail: String::from("3 sks / Sem 5 / BS"),
-                lecturers: vec!["BS"],
+                lecturers: vec!["BS".to_string()],
             },
         ];
 

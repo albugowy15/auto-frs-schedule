@@ -31,6 +31,11 @@ async fn main() {
             sheet,
             outdir,
         } => commands::compare::compare_handler(file, sheet, outdir).await,
+        Commands::Find {
+            file,
+            sheet,
+            course,
+        } => commands::find::find_handler(file, sheet, course).await,
         Commands::Clean => {
             commands::clean::clean_handler().await;
         }

@@ -1,9 +1,13 @@
 use std::path::PathBuf;
 
 use clap::Subcommand;
+use sqlx::MySqlPool;
+
+use crate::db::Database;
 
 pub mod clean;
 pub mod compare;
+pub mod find;
 pub mod sync;
 pub mod update;
 
@@ -49,9 +53,31 @@ pub enum Commands {
     #[command(
         long_about = "Removes any invalid foreign keys present in the _ClassToPlan and _ClassToLecturer tables."
     )]
+    #[command(long_about = "Find class schedule from excel")]
+    Find {
+        #[arg(short, long, value_name = "Required for excel file path")]
+        file: PathBuf,
+
+        #[arg(short, long, value_name = "Required for excel sheet name")]
+        sheet: String,
+
+        #[arg(short, long, value_name = "Required for class subject name to find")]
+        course: String,
+    },
     Clean,
     #[command(
         long_about = "Synchronizes the taken field in the Class table and the totalSks field in the Plan table to reflect their current values."
     )]
     Sync,
+}
+
+async fn create_db_connection() -> anyhow::Result<MySqlPool> {
+    let pool = Database::create_connection()
+        .await
+        .map_err::<anyhow::Error, _>(|e| {
+            log::error!("Failed to create a db connection: {}", e);
+            e
+        })?;
+
+    Ok(pool)
 }
