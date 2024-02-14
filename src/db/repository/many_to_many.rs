@@ -24,7 +24,7 @@ impl ManyToManyRepository<'_> {
                 .execute(&mut *tx)
                 .await?;
         let rows_affected = result_a.rows_affected() + result_b.rows_affected();
-        log::info!("Cleaned {} invalid _ClassToPlan", rows_affected);
+        println!("Cleaned {} invalid _ClassToPlan", rows_affected);
         tx.commit().await?;
         Ok(())
     }
@@ -40,7 +40,7 @@ impl ManyToManyRepository<'_> {
                 .execute(&mut *tx)
                 .await?;
         let rows_affected = result_a.rows_affected() + result_b.rows_affected();
-        log::info!("Cleaned {} invalid _ClassToLecturer", rows_affected);
+        println!("Cleaned {} invalid _ClassToLecturer", rows_affected);
         tx.commit().await?;
         Ok(())
     }

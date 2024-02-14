@@ -140,8 +140,8 @@ impl ClassRepository<'_> {
             bar.inc(1);
         }
         bar.finish_and_clear();
-        log::info!("Done inserting {} classes to Class table", data.len());
-        log::info!("Inserting non-class subject");
+        println!("Done inserting {} classes to Class table", data.len());
+        println!("Inserting non-class subject");
         Self::insert_non_classes(&mut tx).await?;
         tx.commit().await?;
         Ok(())
@@ -192,7 +192,7 @@ impl ClassRepository<'_> {
         )
         .fetch_all(&mut *tx)
         .await?;
-        log::info!("Sync taken {} classes", rows.len());
+        println!("Sync taken {} classes", rows.len());
 
         for row in rows.into_iter() {
             let actual_class_taken: i8 = row.get("actual_taken");

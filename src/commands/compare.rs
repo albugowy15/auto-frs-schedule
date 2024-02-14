@@ -81,84 +81,43 @@ fn compare_schedule(
     (added, deleted, changed)
 }
 
-pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) {
-    let pool = match db::Database::create_connection().await {
-        Ok(pool) => Arc::new(pool),
-        Err(e) => {
-            log::error!("{}", e);
-            return;
-        }
-    };
-    log::info!("Get existing schedule from DB");
+pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> anyhow::Result<()> {
+    println!("Open db connection...");
+    let pool = Arc::new(db::Database::create_connection().await?);
 
+    println!("Get existing schedule from DB");
     let class_repo_schedule_task = spawn_get_schedule(&pool);
     let prepare_data_task = spawn_prepare_data(&pool);
     let (db_classes_res, repo_data_res) =
-        match tokio::try_join!(class_repo_schedule_task, prepare_data_task) {
-            Ok((db, repo)) => (db, repo),
-            Err(e) => {
-                log::error!("{}", e);
-                return;
-            }
-        };
+        tokio::try_join!(class_repo_schedule_task, prepare_data_task)?;
+    let db_classes = db_classes_res?;
+    let repo_data = repo_data_res?;
 
-    let db_classes = match db_classes_res {
-        Ok(res) => res,
-        Err(e) => {
-            log::error!("Error getting db classes: {}", e);
-            return;
-        }
-    };
-
-    let repo_data = match repo_data_res {
-        Ok(res) => res,
-        Err(e) => {
-            log::error!("Error preparing data: {}", e);
-            return;
-        }
-    };
-
-    log::info!("Get latest schedule from Excel");
-    let excel = match Excel::new(file, sheet) {
-        Ok(excel) => excel.with_repo_data(repo_data),
-        Err(e) => {
-            log::error!("Error opening excel file: {}", e);
-            return;
-        }
-    };
+    println!("Get latest schedule from Excel");
+    let excel = Excel::new(file, sheet)?.with_repo_data(repo_data);
     let excel_classes: Vec<ClassFromSchedule> = excel.get_schedule();
 
-    log::info!(
+    println!(
         "Comparing {} classes from Excel with existing schedule",
         excel_classes.len()
     );
     let (added, deleted, changed) = compare_schedule(excel_classes, db_classes);
-
-    log::info!(
+    println!(
         "Detected {} changed, {} added, {} deleted class",
         changed.len(),
         added.len(),
         deleted.len()
     );
-    log::info!("Write the result to {:?}", &outdir);
 
-    let mut writer = match OutWriter::new(outdir).await {
-        Ok(writer) => writer,
-        Err(e) => {
-            log::error!("{}", e);
-            return;
-        }
-    };
-
-    if let Err(e) = writer
+    println!("Write the result to {:?}", &outdir);
+    let mut writer = OutWriter::new(outdir).await?;
+    writer
         .write_compare_result(&added, &changed, &deleted)
-        .await
-    {
-        log::error!("Error writing result: {}", e);
-        return;
-    };
+        .await?;
 
     pool.close().await;
+    println!("Done");
+    Ok(())
 }
 
 #[cfg(test)]

@@ -35,7 +35,7 @@ impl LecturerSubjectSessionMap {
 }
 
 pub async fn prepare_data(pool: &Pool<MySql>) -> Result<LecturerSubjectSessionMap> {
-    log::info!("Get all subjects from DB");
+    println!("Get all subjects from DB");
     let lecturer_repo = LecturerRepository::new(pool);
     let subject_repo = SubjectRepository::new(pool);
     let session_repo = SessionRepository::new(pool);

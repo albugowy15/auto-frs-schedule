@@ -21,7 +21,7 @@ impl PlanRepository<'_> {
         )
         .fetch_all(&mut *tx)
         .await?;
-        log::info!("Sync totalSks {} plans", rows.len());
+        println!("Sync totalSks {} plans", rows.len());
 
         for row in rows.into_iter() {
             let actual_sks: i8 = row.get("actual_sks");
