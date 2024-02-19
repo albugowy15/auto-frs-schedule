@@ -23,8 +23,13 @@ impl Parser for Excel {
 
     fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
         let elem = val.split('-').map(|val| val.trim()).collect::<Vec<_>>();
+        let class_str = elem.first()?;
+        let class_name = if *class_str == "PTEIC" {
+            "Pengenalan Teknologi Elektro dan Informatika Cerdas"
+        } else {
+            class_str
+        };
 
-        let class_name = elem.first()?;
         match elem.len().cmp(&2) {
             cmp::Ordering::Equal => {
                 let code = elem.last()?;
@@ -129,6 +134,11 @@ mod tests {
                 class: "Sistem Basis Data - T".to_string(),
                 subject_name: "Sistem Basis Data".to_string(),
                 subject_code: "T".to_string(),
+            },
+            TestCase {
+                class: "PTEIC - A".to_string(),
+                subject_name: "Pengenalan Teknologi Elektro dan Informatika Cerdas".to_string(),
+                subject_code: "A".to_string(),
             },
         ];
 
