@@ -22,23 +22,34 @@ impl Parser for Excel {
     }
 
     fn parse_subject_with_code(val: &str) -> Option<(String, String)> {
+        // handle edge cases where val has "(EN) - T - IUP" token
+        let en_tok = String::from("(EN) - T - IUP");
+        if val.contains(&en_tok) {
+            let elem = val.split(&en_tok).map(|val| val.trim()).collect::<Vec<_>>();
+            let class_str = elem.first()?;
+            let code = format!("(EN) - T - IUP {}", elem.last()?.trim());
+            return Some((class_str.to_string(), code.trim().to_string()));
+        }
+
+        // common case for all val
         let elem = val.split('-').map(|val| val.trim()).collect::<Vec<_>>();
-        let class_str = elem.first()?;
-        let class_name = if *class_str == "PTEIC" {
+        let subject_str = elem.first()?;
+        // convert class_name "PTEIC" (from excel) into recogninized subject name in database
+        let subject_name = if *subject_str == "PTEIC" {
             "Pengenalan Teknologi Elektro dan Informatika Cerdas"
         } else {
-            class_str
+            subject_str
         };
 
         match elem.len().cmp(&2) {
             cmp::Ordering::Equal => {
                 let code = elem.last()?;
-                Some((class_name.to_string(), code.to_string()))
+                Some((subject_name.to_string(), code.to_string()))
             }
 
             cmp::Ordering::Greater => {
                 let code = elem[1..].join(" ");
-                Some((class_name.to_string(), code.to_string()))
+                Some((subject_name.to_string(), code.to_string()))
             }
             _ => None,
         }
@@ -139,6 +150,17 @@ mod tests {
                 class: "PTEIC - A".to_string(),
                 subject_name: "Pengenalan Teknologi Elektro dan Informatika Cerdas".to_string(),
                 subject_code: "A".to_string(),
+            },
+            TestCase {
+                class: "Konstruksi Perangkat Lunak (EN) - T - IUP".to_string(),
+                subject_name: "Konstruksi Perangkat Lunak".to_string(),
+                subject_code: "(EN) - T - IUP".to_string(),
+            },
+            TestCase {
+                class: "Desain Pengalaman Pengguna (EN) - T - IUP (pelaksanaan di lab giga)"
+                    .to_string(),
+                subject_name: "Desain Pengalaman Pengguna".to_string(),
+                subject_code: "(EN) - T - IUP (pelaksanaan di lab giga)".to_string(),
             },
         ];
 
