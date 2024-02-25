@@ -26,13 +26,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_connection_no_env_var() {
-        // Unset the environment variable
         env::remove_var("FRS_HELPER_DB_URL");
-
-        // Call the function
         let result = Database::create_connection().await;
-
-        // Check if an error is returned
         assert!(result.is_err());
     }
 }

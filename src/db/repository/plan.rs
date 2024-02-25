@@ -1,4 +1,3 @@
-use anyhow::Result;
 use sqlx::{MySql, Pool, Row};
 
 use super::Repository;
@@ -14,7 +13,7 @@ impl<'a> Repository<'a> for PlanRepository<'a> {
 }
 
 impl PlanRepository<'_> {
-    pub async fn sync_total_sks(&self) -> Result<()> {
+    pub async fn sync_total_sks(&self) -> Result<(), sqlx::Error> {
         let mut tx = self.db_pool.begin().await?;
         let rows = sqlx::query(
             "select p.id, p.totalSks, 
@@ -29,9 +28,9 @@ impl PlanRepository<'_> {
         println!("Sync totalSks {} plans", rows.len());
 
         for row in rows.into_iter() {
-            let actual_sks: u64 = row.get("actual_sks"); // declare as f32 since sum() has decimal
-                                                         // type
-            let plan_id: String = row.get("id");
+            let actual_sks: u64 = row.try_get("actual_sks")?; // declare as f32 since sum() has decimal
+                                                              // type
+            let plan_id: String = row.try_get("id")?;
             sqlx::query("update Plan set totalSks = ? where id = ?")
                 .bind(actual_sks)
                 .bind(plan_id)

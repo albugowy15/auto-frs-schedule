@@ -1,4 +1,3 @@
-use anyhow::Result;
 use sqlx::{MySql, Pool};
 use std::collections::HashMap;
 
@@ -34,7 +33,7 @@ impl LecturerSubjectSessionMap {
     }
 }
 
-pub async fn prepare_data(pool: &Pool<MySql>) -> Result<LecturerSubjectSessionMap> {
+pub async fn prepare_data(pool: &Pool<MySql>) -> Result<LecturerSubjectSessionMap, sqlx::Error> {
     println!("Get all subjects from DB");
     let lecturer_repo = LecturerRepository::new(pool);
     let subject_repo = SubjectRepository::new(pool);

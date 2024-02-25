@@ -1,4 +1,3 @@
-use anyhow::Result;
 use sqlx::{MySql, Pool};
 
 use super::Repository;
@@ -14,7 +13,7 @@ impl<'a> Repository<'a> for ManyToManyRepository<'a> {
 }
 
 impl ManyToManyRepository<'_> {
-    pub async fn drop_invalid_class_to_plan(&self) -> Result<()> {
+    pub async fn drop_invalid_class_to_plan(&self) -> Result<(), sqlx::Error> {
         let mut tx = self.db_pool.begin().await?;
         let result_b = sqlx::query("DELETE FROM _ClassToPlan WHERE B NOT IN (SELECT id FROM Plan)")
             .execute(&mut *tx)
@@ -29,7 +28,7 @@ impl ManyToManyRepository<'_> {
         Ok(())
     }
 
-    pub async fn drop_invalid_class_to_lecturer(&self) -> Result<()> {
+    pub async fn drop_invalid_class_to_lecturer(&self) -> Result<(), sqlx::Error> {
         let mut tx = self.db_pool.begin().await?;
         let result_a =
             sqlx::query("DELETE FROM _ClassToLecturer WHERE B NOT IN (SELECT id FROM Lecturer)")
