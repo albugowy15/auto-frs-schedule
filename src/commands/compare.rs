@@ -1,8 +1,3 @@
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
-
-use anyhow::{Error, Result};
-use sqlx::MySqlPool;
-
 use crate::{
     db::{
         self,
@@ -16,6 +11,8 @@ use crate::{
         file::OutWriter,
     },
 };
+use sqlx::MySqlPool;
+use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
 fn compare_class(db_class: &ClassFromSchedule, excel_class: &ClassFromSchedule) -> bool {
     let db_class_lec = &db_class.lecturer_code;
@@ -40,13 +37,13 @@ fn compare_class(db_class: &ClassFromSchedule, excel_class: &ClassFromSchedule) 
 }
 
 type SpawnGetSchedule =
-    tokio::task::JoinHandle<Result<HashMap<(String, String), ClassFromSchedule>, Error>>;
+    tokio::task::JoinHandle<Result<HashMap<(String, String), ClassFromSchedule>, sqlx::Error>>;
 fn spawn_get_schedule(pool: &Arc<MySqlPool>) -> SpawnGetSchedule {
     let cloned_pool = pool.clone();
     tokio::task::spawn(async move { ClassRepository::new(&cloned_pool).get_schedule().await })
 }
 
-type SpawnPrepareData = tokio::task::JoinHandle<Result<LecturerSubjectSessionMap, Error>>;
+type SpawnPrepareData = tokio::task::JoinHandle<Result<LecturerSubjectSessionMap, sqlx::Error>>;
 fn spawn_prepare_data(pool: &Arc<MySqlPool>) -> SpawnPrepareData {
     let cloned_pool = pool.clone();
     tokio::task::spawn(async move { prepare_data(&cloned_pool).await })

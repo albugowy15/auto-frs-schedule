@@ -1,7 +1,4 @@
-use crate::{db::repository::class::Class, DAYS, DAY_OFFSET};
-use calamine::DataType;
-
-use super::{AsIdParser, Excel, Parser, Retrieve, ScheduleParser, SessionParser};
+use super::{AsIdParser, Excel, Parser, Retrieve};
 
 impl AsIdParser for Excel {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {
@@ -18,7 +15,7 @@ impl AsIdParser for Excel {
         let unk_id = self
             .lecturer_subjects_session_map
             .lecturers
-            .get(&String::from("UNK"))?
+            .get("UNK")?
             .to_string();
         let lecturers_id: Vec<String> = lecturers
             .into_iter()
@@ -34,66 +31,18 @@ impl AsIdParser for Excel {
     }
 }
 
-impl SessionParser<i8> for Excel {
-    fn get_session(&self, row_idx: u32) -> Option<i8> {
-        let session_str = self.retrieve_session(row_idx)?;
-        let session_name = Excel::parse_session(&session_str)?;
-        self.lecturer_subjects_session_map
-            .sessions
-            .get(&session_name)
-            .cloned()
-    }
-}
-
-impl ScheduleParser<Class> for Excel {
-    fn get_schedule(&self) -> Vec<Class> {
-        let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1);
-
-        for (row_idx, row) in self.range.rows().enumerate() {
-            for (col_idx, c) in row.iter().enumerate() {
-                let val = match c.get_string() {
-                    Some(val) => val,
-                    None => continue,
-                };
-                let (subject_id, class_code) = match self.get_subject_id_with_code(val) {
-                    Some(val) => val,
-                    None => continue,
-                };
-                let lecturers_id = match self.get_lecturer_id(row_idx as u32, col_idx as u32) {
-                    Some(val) => val,
-                    None => continue,
-                };
-                let day = DAYS[row_idx / DAY_OFFSET];
-                let session_id = match self.get_session(row_idx as u32) {
-                    Some(val) => val,
-                    None => continue,
-                };
-                let data = Class {
-                    matkul_id: subject_id,
-                    lecturers_id,
-                    day: day.to_string(),
-                    code: class_code,
-                    session_id,
-                };
-                list_class.push(data);
-            }
-        }
-        list_class
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
 
     use calamine::Range;
 
     use crate::db::repository::LecturerSubjectSessionMap;
 
     use super::*;
+    use std::collections::HashMap;
 
     #[test]
-    fn test_get_subject_with_code() {
+    fn test_get_subject_id_with_code() {
         // Create a parser
         let mut subject_to_id = HashMap::new();
         subject_to_id.insert(

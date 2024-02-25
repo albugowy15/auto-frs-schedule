@@ -1,17 +1,17 @@
-pub mod parser;
-pub mod retrieve;
+mod as_id_parser;
+mod as_string_parser;
+pub mod find_class;
+mod parser;
+mod retrieve;
 pub mod schedule_parser;
-pub mod schedule_parser_with_id;
+mod session_parser;
 
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
-use calamine::{open_workbook, Data, DataType, Range, Reader, Xlsx};
+use anyhow::Context;
+use calamine::{open_workbook, Data, Range, Reader, Xlsx};
 
-use crate::{
-    db::repository::{class::ClassFindSchedule, LecturerSubjectSessionMap},
-    DAYS,
-};
+use crate::db::repository::{class::ClassFindSchedule, LecturerSubjectSessionMap};
 
 pub struct Excel {
     range: Range<Data>,
@@ -19,7 +19,7 @@ pub struct Excel {
 }
 
 impl Excel {
-    pub fn new(file_path: &PathBuf, sheet_name: &str) -> Result<Self> {
+    pub fn new(file_path: &PathBuf, sheet_name: &str) -> anyhow::Result<Self> {
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| "Cannot open excel file")?;
         let range = excel.worksheet_range(sheet_name)?;
@@ -69,49 +69,4 @@ pub trait ScheduleParser<T> {
 
 pub trait FindClassSchedule {
     fn find_schedule_from_class(&self, subject_name: &str) -> Vec<ClassFindSchedule>;
-}
-
-impl FindClassSchedule for Excel {
-    fn find_schedule_from_class(&self, subject_name: &str) -> Vec<ClassFindSchedule> {
-        let mut schedules: Vec<ClassFindSchedule> = Vec::with_capacity(self.range.get_size().1);
-        for (row_idx, row) in self.range.rows().enumerate() {
-            for (col_idx, c) in row.iter().enumerate() {
-                let val = match c.get_string() {
-                    Some(val) => val,
-                    None => continue,
-                };
-                if !val.contains(subject_name) {
-                    continue;
-                }
-
-                let lecturers_str = match self.retrieve_class_detail(row_idx as u32, col_idx as u32)
-                {
-                    Some(lecs) => lecs,
-                    None => continue,
-                };
-                let lecturers = match Excel::parse_lecturer(&lecturers_str) {
-                    Some(lecs) => lecs,
-                    None => continue,
-                };
-                let day = DAYS[row_idx / 14];
-
-                let session_str = match self.retrieve_session(row_idx as u32) {
-                    Some(session) => session,
-                    None => continue,
-                };
-                let session_name = match Excel::parse_session(&session_str) {
-                    Some(session) => session,
-                    None => continue,
-                };
-                let data = ClassFindSchedule {
-                    class: val.to_string(),
-                    lecturers_code: lecturers,
-                    day: day.to_string(),
-                    session_start: session_name,
-                };
-                schedules.push(data);
-            }
-        }
-        schedules
-    }
 }
