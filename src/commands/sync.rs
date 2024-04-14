@@ -4,13 +4,13 @@ use crate::db::{
 };
 
 pub async fn sync_handler() -> anyhow::Result<()> {
-    println!("Open db connection...");
     let pool = db::Database::create_connection().await?;
     println!("Sync totalSks from Plan...");
     PlanRepository::new(&pool).sync_total_sks().await?;
     println!("Sync taken from Class..");
     ClassRepository::new(&pool).sync_taken().await?;
     pool.close().await;
+    println!("Closing database connection");
     println!("Successfully synced taken and totalSks from Class and Plan tables");
     Ok(())
 }

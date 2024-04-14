@@ -20,9 +20,12 @@ pub struct Excel {
 
 impl Excel {
     pub fn new(file_path: &PathBuf, sheet_name: &str) -> anyhow::Result<Self> {
+        println!("Open excel file at {:?}", file_path);
         let mut excel: Xlsx<_> =
             open_workbook(file_path).with_context(|| "Cannot open excel file")?;
+        println!("Open excel sheet from {}", sheet_name);
         let range = excel.worksheet_range(sheet_name)?;
+        println!("Successfully open excel file");
         Ok(Self {
             range,
             lecturer_subjects_session_map: LecturerSubjectSessionMap::default(),

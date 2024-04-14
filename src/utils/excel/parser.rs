@@ -46,7 +46,6 @@ impl Parser for Excel {
                 let code = elem.last()?;
                 Some((subject_name.to_string(), code.to_string()))
             }
-
             cmp::Ordering::Greater => {
                 let code = elem[1..].join(" ");
                 Some((subject_name.to_string(), code.to_string()))

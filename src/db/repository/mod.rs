@@ -34,7 +34,7 @@ impl LecturerSubjectSessionMap {
 }
 
 pub async fn prepare_data(pool: &Pool<MySql>) -> Result<LecturerSubjectSessionMap, sqlx::Error> {
-    println!("Get all subjects from DB");
+    println!("Fetch subjects, lecturers, and sessions from database");
     let lecturer_repo = LecturerRepository::new(pool);
     let subject_repo = SubjectRepository::new(pool);
     let session_repo = SessionRepository::new(pool);
@@ -43,6 +43,12 @@ pub async fn prepare_data(pool: &Pool<MySql>) -> Result<LecturerSubjectSessionMa
         lecturer_repo.get_all_lecturers(),
         session_repo.get_all_sessions()
     )?;
+    println!(
+        "Got {} subjects, {} lecturers, and {} sessions from database",
+        subjects.len(),
+        lecturers.len(),
+        sessions.len()
+    );
     Ok(LecturerSubjectSessionMap {
         subjects,
         lecturers,

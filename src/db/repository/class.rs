@@ -141,6 +141,7 @@ impl ClassRepository<'_> {
     pub async fn get_schedule(
         &self,
     ) -> Result<HashMap<(String, String), ClassFromSchedule>, sqlx::Error> {
+        println!("Fetch existing schedule from database");
         let rows = sqlx::query(
             "SELECT c.id, m.name as subject_name, c.code as class_code, 
             c.day, l.code as lecture_code, cls.total_lecturer, s.session_time 
@@ -196,6 +197,10 @@ impl ClassRepository<'_> {
             };
             class_map.insert(key, value);
         }
+        println!(
+            "Got {} existing class schedule from database",
+            class_map.len()
+        );
         Ok(class_map)
     }
 

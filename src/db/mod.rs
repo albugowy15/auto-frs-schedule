@@ -9,6 +9,7 @@ pub struct Database;
 
 impl Database {
     pub async fn create_connection() -> Result<MySqlPool> {
+        println!("Creating database connection");
         let db_url =
             env::var("FRS_HELPER_DB_URL").with_context(|| "FRS_HELPER_DB_URL must be set")?;
         let pool = MySqlPoolOptions::new()
@@ -16,6 +17,7 @@ impl Database {
             .connect(&db_url)
             .await
             .with_context(|| "Error when create database connection")?;
+        println!("Successfully create database connection from {}", db_url);
         Ok(pool)
     }
 }

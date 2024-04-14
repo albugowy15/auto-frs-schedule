@@ -3,7 +3,7 @@ use crate::{
         self,
         repository::{
             class::{ClassFromSchedule, ClassRepository},
-            prepare_data, LecturerSubjectSessionMap, Repository,
+            prepare_data, Repository,
         },
     },
     utils::{
@@ -11,8 +11,63 @@ use crate::{
         file::OutWriter,
     },
 };
-use sqlx::MySqlPool;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
+pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> anyhow::Result<()> {
+    let pool = Arc::new(db::Database::create_connection().await?);
+    let class_repo = ClassRepository::new(&pool);
+    let (db_classes, repo_data) = tokio::try_join!(class_repo.get_schedule(), prepare_data(&pool))?;
+
+    let excel = Excel::new(file, sheet)?.with_repo_data(repo_data);
+    let excel_classes = excel.get_schedule();
+
+    println!(
+        "Comparing {} classes from Excel with existing schedule",
+        excel_classes.len()
+    );
+    let (added, deleted, changed) = compare_schedule(excel_classes, db_classes);
+    if is_schedule_sync(&added, &deleted, &changed) {
+        println!("No schedule change detected");
+    } else {
+        println!(
+            "Detected {} changed, {} added, {} deleted class",
+            changed.len(),
+            added.len(),
+            deleted.len()
+        );
+        println!("Write the result to {:?}", &outdir);
+        let mut writer = OutWriter::new(outdir).await?;
+        writer
+            .write_compare_result(&added, &changed, &deleted)
+            .await?;
+        println!("Successfully write all schedule changes to {:?}", &outdir);
+    }
+
+    pool.close().await;
+    println!("Closing database connection");
+    println!("Done");
+    Ok(())
+}
+
+fn is_schedule_sync(
+    added: &[ClassFromSchedule],
+    changed: &[ClassFromSchedule],
+    deleted: &[(ClassFromSchedule, ClassFromSchedule)],
+) -> bool {
+    added.is_empty() && changed.is_empty() && deleted.is_empty()
+}
+
+fn is_same_class(
+    db_class: &ClassFromSchedule,
+    excel_class: &ClassFromSchedule,
+    cmp_lecs: bool,
+) -> bool {
+    db_class.subject_name == excel_class.subject_name
+        && db_class.class_code == excel_class.class_code
+        && db_class.session_start == excel_class.session_start
+        && db_class.day == excel_class.day
+        && cmp_lecs
+}
 
 fn compare_class(db_class: &ClassFromSchedule, excel_class: &ClassFromSchedule) -> bool {
     let db_class_lec = &db_class.lecturer_code;
@@ -29,24 +84,7 @@ fn compare_class(db_class: &ClassFromSchedule, excel_class: &ClassFromSchedule) 
 
     let cmp_lecs = db_lec_sorted.eq(&excel_lec_sorted);
 
-    db_class.subject_name == excel_class.subject_name
-        && db_class.class_code == excel_class.class_code
-        && db_class.session_start == excel_class.session_start
-        && db_class.day == excel_class.day
-        && cmp_lecs
-}
-
-type SpawnGetSchedule =
-    tokio::task::JoinHandle<Result<HashMap<(String, String), ClassFromSchedule>, sqlx::Error>>;
-fn spawn_get_schedule(pool: &Arc<MySqlPool>) -> SpawnGetSchedule {
-    let cloned_pool = pool.clone();
-    tokio::task::spawn(async move { ClassRepository::new(&cloned_pool).get_schedule().await })
-}
-
-type SpawnPrepareData = tokio::task::JoinHandle<Result<LecturerSubjectSessionMap, sqlx::Error>>;
-fn spawn_prepare_data(pool: &Arc<MySqlPool>) -> SpawnPrepareData {
-    let cloned_pool = pool.clone();
-    tokio::task::spawn(async move { prepare_data(&cloned_pool).await })
+    is_same_class(db_class, excel_class, cmp_lecs)
 }
 
 fn compare_schedule(
@@ -76,45 +114,6 @@ fn compare_schedule(
     deleted.extend(db_classes.into_values());
 
     (added, deleted, changed)
-}
-
-pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> anyhow::Result<()> {
-    println!("Open db connection...");
-    let pool = Arc::new(db::Database::create_connection().await?);
-
-    println!("Get existing schedule from DB");
-    let class_repo_schedule_task = spawn_get_schedule(&pool);
-    let prepare_data_task = spawn_prepare_data(&pool);
-    let (db_classes_res, repo_data_res) =
-        tokio::try_join!(class_repo_schedule_task, prepare_data_task)?;
-    let db_classes = db_classes_res?;
-    let repo_data = repo_data_res?;
-
-    println!("Get latest schedule from Excel");
-    let excel = Excel::new(file, sheet)?.with_repo_data(repo_data);
-    let excel_classes: Vec<ClassFromSchedule> = excel.get_schedule();
-
-    println!(
-        "Comparing {} classes from Excel with existing schedule",
-        excel_classes.len()
-    );
-    let (added, deleted, changed) = compare_schedule(excel_classes, db_classes);
-    println!(
-        "Detected {} changed, {} added, {} deleted class",
-        changed.len(),
-        added.len(),
-        deleted.len()
-    );
-
-    println!("Write the result to {:?}", &outdir);
-    let mut writer = OutWriter::new(outdir).await?;
-    writer
-        .write_compare_result(&added, &changed, &deleted)
-        .await?;
-
-    pool.close().await;
-    println!("Done");
-    Ok(())
 }
 
 #[cfg(test)]

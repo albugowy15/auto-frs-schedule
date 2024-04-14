@@ -6,6 +6,7 @@ pub async fn find_handler(file: &PathBuf, sheet: &str, subject: &str) -> anyhow:
     println!("Parse class schedule from Excel");
     let excel = Excel::new(file, sheet)?;
 
+    println!("Search all class schedule for {} from excel file", subject);
     let class_schedule = excel.find_schedule_from_class(subject);
     println!("Found {} schedules for {}", class_schedule.len(), subject);
     for schedule in class_schedule.into_iter() {
