@@ -1,8 +1,12 @@
+use crate::excel::retrieve::*;
+use crate::excel::Excel;
+use crate::parser::Parser;
+use crate::{db::repository::class::ClassFindSchedule, DAYS};
 use calamine::DataType;
 
-use crate::{db::repository::class::ClassFindSchedule, DAYS};
-
-use super::{Excel, FindClassSchedule, Parser, Retrieve};
+pub trait FindClassSchedule {
+    fn find_schedule_from_class(&self, subject_name: &str) -> Vec<ClassFindSchedule>;
+}
 
 impl FindClassSchedule for Excel {
     fn find_schedule_from_class(&self, subject_name: &str) -> Vec<ClassFindSchedule> {

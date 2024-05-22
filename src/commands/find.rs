@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::utils::excel::{Excel, FindClassSchedule};
+use crate::excel::{find_class::FindClassSchedule, Excel};
 
 pub async fn find_handler(file: &PathBuf, sheet: &str, subject: &str) -> anyhow::Result<()> {
     println!("Parse class schedule from Excel");

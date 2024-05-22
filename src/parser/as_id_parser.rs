@@ -1,4 +1,11 @@
-use super::{AsIdParser, Excel, Parser, Retrieve};
+use crate::excel::retrieve::Retrieve;
+use crate::excel::Excel;
+use crate::parser::Parser;
+
+pub trait AsIdParser {
+    fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)>;
+    fn get_lecturer_id(&self, row: u32, col: u32) -> Option<Vec<String>>;
+}
 
 impl AsIdParser for Excel {
     fn get_subject_id_with_code(&self, val: &str) -> Option<(String, String)> {

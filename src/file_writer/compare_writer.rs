@@ -1,57 +1,33 @@
-use std::path::Path;
+use crate::db::repository::class::ClassFromSchedule;
+use crate::file_writer::class_writer::ClassFileWriter;
 
-use anyhow::{Context, Result};
-use tokio::{fs::File, io::AsyncWriteExt};
+use super::FileWriter;
 
-use crate::db::repository::class::{Class, ClassFromSchedule};
-
-enum CompareVecResult<'a> {
-    DBAndExcel(&'a Vec<(ClassFromSchedule, ClassFromSchedule)>),
-    Excel(&'a Vec<ClassFromSchedule>),
+pub enum CompareVecResult<'a> {
+    DBAndExcel(&'a [(ClassFromSchedule, ClassFromSchedule)]),
+    Excel(&'a [ClassFromSchedule]),
 }
 
-pub struct OutWriter {
-    file: File,
+pub trait CompareFileWriter {
+    fn write_change(
+        &mut self,
+        header: &str,
+        result: &CompareVecResult<'_>,
+    ) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+    fn write_compare_result(
+        &mut self,
+        added: &[ClassFromSchedule],
+        changed: &[(ClassFromSchedule, ClassFromSchedule)],
+        deleted: &[ClassFromSchedule],
+    ) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
 }
 
-impl OutWriter {
-    pub async fn new(out_path: &Path) -> Result<Self> {
-        Ok(Self {
-            file: File::create(out_path).await?,
-        })
-    }
-
-    async fn write(&mut self, query: String) -> Result<()> {
-        self.file
-            .write_all(query.as_bytes())
-            .await
-            .with_context(|| format!("Error writing to file: {:?}", self.file))?;
-        Ok(())
-    }
-
-    async fn sync_all(&mut self) -> Result<()> {
-        self.file
-            .sync_all()
-            .await
-            .with_context(|| format!("Error syncing file: {:?}", self.file))?;
-        Ok(())
-    }
-
-    async fn write_class_info(&mut self, prefix: &str, class: &ClassFromSchedule) -> Result<()> {
-        let query = format!(
-            "{} {} {}, {} {}, {:?}\n",
-            prefix,
-            class.subject_name,
-            class.class_code,
-            class.day,
-            class.session_start,
-            class.lecturer_code
-        );
-        self.write(query).await?;
-        Ok(())
-    }
-
-    async fn write_change(&mut self, header: &str, result: &CompareVecResult<'_>) -> Result<()> {
+impl CompareFileWriter for FileWriter {
+    async fn write_change(
+        &mut self,
+        header: &str,
+        result: &CompareVecResult<'_>,
+    ) -> anyhow::Result<()> {
         let header_section = format!("--- {} ---\n", header);
         self.write(header_section).await?;
         match result {
@@ -70,30 +46,12 @@ impl OutWriter {
         Ok(())
     }
 
-    #[allow(deprecated)]
-    pub async fn write_output(&mut self, list_class: &[Class]) -> Result<()> {
-        for class in list_class.iter() {
-            let id_class = cuid::cuid().with_context(|| "Could not create cuid")?;
-            let query = format!(
-            "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES ('{}', '{}', '{}', '{}', false, 0, {});\n",
-            id_class,
-            class.matkul_id,
-            class.day,
-            class.code,
-            class.session_id
-        );
-            self.write(query).await?;
-        }
-        self.sync_all().await?;
-        Ok(())
-    }
-
-    pub async fn write_compare_result(
+    async fn write_compare_result(
         &mut self,
-        added: &Vec<ClassFromSchedule>,
-        changed: &Vec<(ClassFromSchedule, ClassFromSchedule)>,
-        deleted: &Vec<ClassFromSchedule>,
-    ) -> Result<()> {
+        added: &[ClassFromSchedule],
+        changed: &[(ClassFromSchedule, ClassFromSchedule)],
+        deleted: &[ClassFromSchedule],
+    ) -> anyhow::Result<()> {
         self.write_change("ADDED", &CompareVecResult::Excel(added))
             .await?;
         self.write_change("CHANGED", &CompareVecResult::DBAndExcel(changed))
@@ -108,31 +66,18 @@ impl OutWriter {
 mod tests {
     use std::path::PathBuf;
 
-    use super::*;
-
-    #[tokio::test]
-    async fn test_write() {
-        let out_path = PathBuf::from("test_write.txt");
-        let mut out_writer = OutWriter::new(&out_path).await.unwrap();
-
-        // Write to the file
-        let query = "SELECT * FROM users;".to_string();
-        out_writer.write(query).await.unwrap();
-
-        // Read the file
-        let contents = tokio::fs::read_to_string("test_write.txt").await.unwrap();
-
-        // Assert that the file contains the query
-        assert_eq!(contents, "SELECT * FROM users;");
-
-        // Clean up
-        tokio::fs::remove_file("test_write.txt").await.unwrap();
-    }
+    use crate::{
+        db::repository::class::ClassFromSchedule,
+        file_writer::{
+            compare_writer::{CompareFileWriter, CompareVecResult},
+            FileWriter,
+        },
+    };
 
     #[tokio::test]
     async fn test_write_change() {
         let out_path = PathBuf::from("test_write_change.txt");
-        let mut out_writer = OutWriter::new(&out_path).await.unwrap();
+        let mut file_writer = FileWriter::new(&out_path).await.unwrap();
 
         // Create some test data
         let class1 = ClassFromSchedule {
@@ -152,7 +97,7 @@ mod tests {
         let data = vec![(class1, class2)];
 
         // Write the change to the file
-        out_writer
+        file_writer
             .write_change("CHANGED", &CompareVecResult::DBAndExcel(&data))
             .await
             .unwrap();
@@ -174,45 +119,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_write_output() {
-        let out_path = PathBuf::from("test_write_output.txt");
-        let mut out_writer = OutWriter::new(&out_path).await.unwrap();
-
-        // Create some test data
-        let class = Class {
-            matkul_id: "CS101".to_string(),
-            day: "Monday".to_string(),
-            code: "C1".to_string(),
-            session_id: 1,
-            lecturers_id: vec![],
-        };
-
-        let list_class = vec![class];
-
-        // Write the output to the file
-        out_writer.write_output(&list_class).await.unwrap();
-
-        // Read the file
-        let contents = tokio::fs::read_to_string("test_write_output.txt")
-            .await
-            .unwrap();
-
-        // Assert that the file contains the output
-        assert!(contents.contains(
-            "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES ("
-        ));
-        assert!(contents.contains("'CS101', 'Monday', 'C1', false, 0, 1"));
-
-        // Clean up
-        tokio::fs::remove_file("test_write_output.txt")
-            .await
-            .unwrap();
-    }
-
-    #[tokio::test]
     async fn test_write_compare_result() {
         let out_path = PathBuf::from("test_write_compare_result.txt");
-        let mut out_writer = OutWriter::new(&out_path).await.unwrap();
+        let mut file_writer = FileWriter::new(&out_path).await.unwrap();
 
         // Create some test data
         let class1 = ClassFromSchedule {
@@ -234,7 +143,7 @@ mod tests {
         let deleted = vec![class2.clone()];
 
         // Write the compare result to the file
-        out_writer
+        file_writer
             .write_compare_result(&added, &changed, &deleted)
             .await
             .unwrap();

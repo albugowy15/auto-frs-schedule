@@ -1,4 +1,11 @@
-use super::{AsStringParser, Excel, Parser, Retrieve};
+use crate::excel::retrieve::Retrieve;
+use crate::excel::Excel;
+use crate::parser::Parser;
+
+pub trait AsStringParser {
+    fn get_subject_with_code(&self, val: &str) -> Option<(String, String)>;
+    fn get_lecturer(&self, row: u32, col: u32) -> Option<Vec<String>>;
+}
 
 impl AsStringParser for Excel {
     fn get_subject_with_code(&self, val: &str) -> Option<(String, String)> {

@@ -1,4 +1,10 @@
-use super::{Excel, Parser, Retrieve, SessionParser};
+use crate::excel::retrieve::Retrieve;
+use crate::excel::Excel;
+use crate::parser::Parser;
+
+pub trait SessionParser<T> {
+    fn get_session(&self, row_idx: u32) -> Option<T>;
+}
 
 impl SessionParser<i8> for Excel {
     fn get_session(&self, row_idx: u32) -> Option<i8> {
