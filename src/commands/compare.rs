@@ -6,10 +6,9 @@ use crate::{
             prepare_data, Repository,
         },
     },
-    utils::{
-        excel::{Excel, ScheduleParser},
-        file::OutWriter,
-    },
+    excel::Excel,
+    file_writer::{compare_writer::CompareFileWriter, FileWriter},
+    parser::schedule_parser::ScheduleParser,
 };
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 
@@ -36,8 +35,8 @@ pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> a
             deleted.len()
         );
         println!("Write the result to {:?}", &outdir);
-        let mut writer = OutWriter::new(outdir).await?;
-        writer
+        let mut file_writer = FileWriter::new(outdir).await?;
+        file_writer
             .write_compare_result(&added, &changed, &deleted)
             .await?;
         println!("Successfully write all schedule changes to {:?}", &outdir);

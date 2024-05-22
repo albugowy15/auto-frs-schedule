@@ -9,10 +9,9 @@ use crate::{
             prepare_data, Repository,
         },
     },
-    utils::{
-        excel::{Excel, ScheduleParser},
-        file::OutWriter,
-    },
+    excel::Excel,
+    file_writer::{sql_writer::SqlFileWriter, FileWriter},
+    parser::schedule_parser::ScheduleParser,
 };
 
 pub async fn update_handler(
@@ -65,9 +64,9 @@ async fn write_change_to_output_file(
     path_output: PathBuf,
 ) -> anyhow::Result<()> {
     println!("Write {} classes to out directory", list_class.len());
-    OutWriter::new(&path_output)
+    FileWriter::new(&path_output)
         .await?
-        .write_output(&list_class)
+        .write_sql(&list_class)
         .await?;
     Ok(())
 }

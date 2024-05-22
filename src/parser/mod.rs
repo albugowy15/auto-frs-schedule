@@ -1,6 +1,17 @@
+pub mod as_id_parser;
+pub mod as_string_parser;
+pub mod schedule_parser;
+pub mod session_parser;
+
 use std::cmp;
 
-use super::{Excel, Parser};
+use crate::excel::Excel;
+
+pub trait Parser {
+    fn parse_lecturer(class_detail_str: &str) -> Option<Vec<String>>;
+    fn parse_session(session_str: &str) -> Option<String>;
+    fn parse_subject_with_code(val: &str) -> Option<(String, String)>;
+}
 
 impl Parser for Excel {
     fn parse_lecturer(class_detail_str: &str) -> Option<Vec<String>> {

@@ -1,11 +1,16 @@
 use crate::{
     db::repository::class::{Class, ClassFromSchedule},
+    excel::Excel,
+    parser::as_id_parser::AsIdParser,
+    parser::as_string_parser::AsStringParser,
+    parser::session_parser::SessionParser,
     DAYS, DAY_OFFSET,
 };
 use calamine::DataType;
 
-use super::{AsIdParser, AsStringParser, Excel, ScheduleParser, SessionParser};
-
+pub trait ScheduleParser<T> {
+    fn get_schedule(&self) -> Vec<T>;
+}
 impl ScheduleParser<Class> for Excel {
     fn get_schedule(&self) -> Vec<Class> {
         let mut list_class: Vec<Class> = Vec::with_capacity(self.range.get_size().1);
