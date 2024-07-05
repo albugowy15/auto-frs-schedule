@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/albugowy15/auto-frs-schedule/compare/v2.8.0...v2.8.1) (2024-07-05)
+
+
+### Bug Fixes
+
+* avoid print database url when opening database connection ([d782a01](https://github.com/albugowy15/auto-frs-schedule/commit/d782a013187608c413a41144761caf0ae14d59ad))
+
 ## [2.8.0](https://github.com/albugowy15/auto-frs-schedule/compare/v2.7.0...v2.8.0) (2024-06-13)
 
 
