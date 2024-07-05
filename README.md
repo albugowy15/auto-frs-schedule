@@ -130,4 +130,3 @@ Remove any invalid foreign keys from the `_ClassToPlan` and `_ClassToLecturer` t
 - **clap** : Clap emerges as a robust and swift Command Line Argument Parser for Rust. It facilitates the parsing of command-line arguments, enhancing the overall usability and flexibility of Rust applications.
 - **indicatif** : Indicatif contributes to the project by providing a set of utilities for indicating progress or status in the command line interface. This is particularly useful for conveying information about ongoing tasks or processes.
 - **anyhow** : Anyhow is employed for error handling in the project. It simplifies the process of handling various error types by providing a unified, ergonomic interface for error management in Rust applications.
-

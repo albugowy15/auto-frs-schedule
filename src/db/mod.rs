@@ -17,7 +17,7 @@ impl Database {
             .connect(&db_url)
             .await
             .with_context(|| "Error when create database connection")?;
-        println!("Successfully create database connection from {}", db_url);
+        println!("Successfully create database connection");
         Ok(pool)
     }
 }
