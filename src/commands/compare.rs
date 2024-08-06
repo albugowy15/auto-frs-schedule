@@ -39,12 +39,9 @@ pub async fn compare_handler(file: &PathBuf, sheet: &str, outdir: &PathBuf) -> a
         file_writer
             .write_compare_result(&added, &changed, &deleted)
             .await?;
-        println!("Successfully write all schedule changes to {:?}", &outdir);
     }
 
     pool.close().await;
-    println!("Closing database connection");
-    println!("Done");
     Ok(())
 }
 

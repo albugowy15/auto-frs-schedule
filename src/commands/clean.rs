@@ -12,7 +12,5 @@ pub async fn clean_handler() -> anyhow::Result<()> {
         many_to_many_repo.drop_invalid_class_to_lecturer()
     )?;
     pool.close().await;
-    println!("Closing databse connection");
-    println!("Done");
     Ok(())
 }

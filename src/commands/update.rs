@@ -46,8 +46,6 @@ pub async fn update_handler(
         handle.await??;
     }
     pool.close().await;
-    println!("Closing database connection");
-    println!("Done");
     Ok(())
 }
 
