@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "auto-frs-schedule"
-version = "2.8.1"
+version = "2.9.0"
 dependencies = [
  "anyhow",
  "calamine",

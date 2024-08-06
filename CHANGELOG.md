@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.9.0](https://github.com/albugowy15/auto-frs-schedule/compare/v2.8.1...v2.9.0) (2024-08-06)
+
+
+### Features
+
+* set 'Jadwal Kuliah' as default sheet name ([b8cbbd4](https://github.com/albugowy15/auto-frs-schedule/commit/b8cbbd449d081af6d26cebdf2f523b1feb344426))
+
+
+### Bug Fixes
+
+* escaped sql string ([bdfade0](https://github.com/albugowy15/auto-frs-schedule/commit/bdfade06a552bfe7a93326c52e7c674636b24b6a))
+* remove env variable inside unsafe block ([710d266](https://github.com/albugowy15/auto-frs-schedule/commit/710d266eeb8d1a33b948f5b46ce89b95beda82ce))
+* remove unnecessary log ([1000482](https://github.com/albugowy15/auto-frs-schedule/commit/10004826cf62a01adabbb49a3a9906a3a7392e48))
+
 ## [2.8.1](https://github.com/albugowy15/auto-frs-schedule/compare/v2.8.0...v2.8.1) (2024-07-05)
 
 
