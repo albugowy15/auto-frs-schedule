@@ -5,6 +5,7 @@ use crate::db::repository::class::Class;
 use super::FileWriter;
 
 pub trait SqlFileWriter {
+    fn escape_sql_string(value: &str) -> String;
     fn write_sql(
         &mut self,
         list_class: &[Class],
@@ -12,6 +13,10 @@ pub trait SqlFileWriter {
 }
 
 impl SqlFileWriter for FileWriter {
+    fn escape_sql_string(value: &str) -> String {
+        value.replace('\'', "\\'")
+    }
+
     #[allow(deprecated)]
     async fn write_sql(&mut self, list_class: &[Class]) -> anyhow::Result<()> {
         for class in list_class.iter() {
@@ -20,8 +25,8 @@ impl SqlFileWriter for FileWriter {
             "INSERT INTO Class (id, matkulId, day, code, isAksel, taken, sessionId) VALUES ('{}', '{}', '{}', '{}', false, 0, {});\n",
             id_class,
             class.matkul_id,
-            class.day,
-            class.code,
+            Self::escape_sql_string(&class.day),
+            Self::escape_sql_string(&class.code),
             class.session_id
         );
             self.write(query).await?;
