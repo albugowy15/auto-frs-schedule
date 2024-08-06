@@ -17,7 +17,7 @@ pub enum Commands {
         #[arg(short, long, value_name = "Required for latest schedule excel file")]
         file: PathBuf,
 
-        #[arg(short, long, value_name = "Required for excel sheet name")]
+        #[arg(short, long, value_name = "Excel sheet name. Default set to 'Jadwal Kuliah'", default_value = "Jadwal Kuliah")]
         sheet: String,
 
         #[arg(short, long, value_name = "Required for output path")]
@@ -38,7 +38,7 @@ pub enum Commands {
         #[arg(short, long, value_name = "Required for excel file path")]
         file: PathBuf,
 
-        #[arg(short, long, value_name = "Required for excel sheet name")]
+        #[arg(short, long, value_name = "Excel sheet name. Default set to 'Jadwal Kuliah'", default_value = "Jadwal Kuliah")]
         sheet: String,
 
         #[arg(
@@ -54,7 +54,7 @@ pub enum Commands {
         #[arg(short, long, value_name = "Required for excel file path")]
         file: PathBuf,
 
-        #[arg(short, long, value_name = "Required for excel sheet name")]
+        #[arg(short, long, value_name = "Excel sheet name. Default set to 'Jadwal Kuliah'", default_value = "Jadwal Kuliah")]
         sheet: String,
 
         #[arg(short, long, value_name = "Required for class subject name to find")]
