@@ -18,19 +18,19 @@ This CLI application is a crucial part of the [Informatics FRS Helper](https://g
 
 - `-p --push` : An optional argument to specify whether only parsing the Excel file or also pushing the class data to the database.
 - `-f --file` : A required argument indicating the path to the Excel file.
-- `-s --sheet` : A required argument specifying the name of the Excel sheet.
+- `-s --sheet` : An optional argument specifying the name of the Excel sheet. Defaults to `Jadwal Kuliah` if not provided.
 - `-o --outdir` : An optional argument to determine the output directory for saving the SQL statements.
 
 ### `compare` command
 
 - `-f --file` : A required argument indicating the path to the Excel file.
-- `-s --sheet` : A required argument specifying the name of the Excel sheet.
+- `-s --sheet` : An optional argument specifying the name of the Excel sheet. Defaults to `Jadwal Kuliah` if not provided.
 - `-o --outdir` : A required argument to define the output directory for writing the comparison results.
 
 ### `find` command
 
 - `-f --file` : A required argument indicating the path to the Excel file.
-- `-s --sheet` : A required argument specifying the name of the Excel sheet.
+- `-s --sheet` : An optional argument specifying the name of the Excel sheet. Defaults to `Jadwal Kuliah` if not provided.
 - `-c --course` : A required argument indicating the subject name of the class to find schedules for.
 
 ## How To Run
@@ -74,35 +74,35 @@ This CLI application is a crucial part of the [Informatics FRS Helper](https://g
 
 ```bash
 # Example 1: Parse and push class schedule to MySQL database
-auto-frs-schedule update --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah"
+auto-frs-schedule update --push -f ~/Downloads/FRS.xlsx
 ```
 
 Open `FRS.xlsx` file from the `~/Downloads` directory, parse all class schedules from `Jadwal Kuliah` sheet, and push the data to the MySQL database.
 
 ```bash
 # Example 2: Parse class schedule and save SQL statements to a file
-auto-frs-schedule update -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
+auto-frs-schedule update -f ~/Downloads/FRS.xlsx -o ./result/classes.sql
 ```
 
 Open the `FRS.xlsx` file from the `~/Downloads` directory, parse all class schedules from the `Jadwal Kuliah` sheet, and save the SQL statements to the `./result/classes.sql` file.
 
 ```bash
 # Example 3: Parse, push to MySQL, and save SQL statements to a file
-auto-frs-schedule update --push -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/classes.sql
+auto-frs-schedule update --push -f ~/Downloads/FRS.xlsx -o ./result/classes.sql
 ```
 
 Open the `FRS.xlsx` file from the `~/Downloads` directory, parse all class schedules from the `Jadwal Kuliah` sheet, push the data to the MySQL database, and save the SQL statements to the `./result/classes.sql` file.
 
 ```bash
 # Example 4: Compare class schedule and save changes to a file
-auto-frs-schedule compare -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -o ./result/changes.txt
+auto-frs-schedule compare -f ~/Downloads/FRS.xlsx -o ./result/changes.txt
 ```
 
 Open the `FRS.xlsx` file from the `~/Downloads` directory, parse all class schedules from the `Jadwal Kuliah` sheet, compare it with the existing class schedule in the database, and save the changes to the `./result/changes.txt` file.
 
 ```bash
 # Example 5: Retrieve all schedules for the "Pemrograman Web" class
-auto-frs-schedule find -f ~/Downloads/FRS.xlsx -s "Jadwal Kuliah" -c "Pemrograman Web"
+auto-frs-schedule find -f ~/Downloads/FRS.xlsx -c "Pemrograman Web"
 ```
 
 Open the `FRS.xlsx` file from the `~/Downloads` directory, parse all class schedules from the `Jadwal Kuliah` sheet,
