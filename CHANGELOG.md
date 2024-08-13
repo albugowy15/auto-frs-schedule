@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.10.0](https://github.com/albugowy15/auto-frs-schedule/compare/v2.9.0...v2.10.0) (2024-08-13)
+
+
+### Features
+
+* panic when cannot find id for unknown lecturer code ([f6e7895](https://github.com/albugowy15/auto-frs-schedule/commit/f6e7895685e14a729df623da1ac181bb903b0fad))
+* print find schedule result with tabular format ([e10cdec](https://github.com/albugowy15/auto-frs-schedule/commit/e10cdec4e3b7d62ab53bea211b540783982e5781))
+
 ## [2.9.0](https://github.com/albugowy15/auto-frs-schedule/compare/v2.8.1...v2.9.0) (2024-08-06)
 
 
