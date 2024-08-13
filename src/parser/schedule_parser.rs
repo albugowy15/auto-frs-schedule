@@ -1,12 +1,14 @@
 use crate::{
     db::repository::class::{Class, ClassFromSchedule},
-    excel::Excel,
-    parser::as_id_parser::AsIdParser,
-    parser::as_string_parser::AsStringParser,
-    parser::session_parser::SessionParser,
+    excel::{retrieve::Retrieve, Excel},
+    parser::{
+        as_id_parser::AsIdParser, as_string_parser::AsStringParser, session_parser::SessionParser,
+    },
     DAYS, DAY_OFFSET,
 };
 use calamine::DataType;
+
+use super::Parser;
 
 pub trait ScheduleParser<T> {
     fn get_schedule(&self) -> Vec<T>;
@@ -17,6 +19,7 @@ impl ScheduleParser<Class> for Excel {
 
         for (row_idx, row) in self.range.rows().enumerate() {
             for (col_idx, c) in row.iter().enumerate() {
+                // start parse subjects and subject code
                 let val = match c.get_string() {
                     Some(val) => val,
                     None => continue,
@@ -25,15 +28,28 @@ impl ScheduleParser<Class> for Excel {
                     Some(val) => val,
                     None => continue,
                 };
-                let lecturers_id = match self.get_lecturer_id(row_idx as u32, col_idx as u32) {
+                // start parse subjects and subject code
+
+                // start parse lecturers
+                let lecturers_str = match self.retrieve_class_detail(row_idx as u32, col_idx as u32)
+                {
                     Some(val) => val,
                     None => continue,
                 };
+                let lecturers = match Excel::parse_lecturer(&lecturers_str) {
+                    Some(val) => val,
+                    None => continue,
+                };
+                let lecturers_id = self.get_lecturer_id(lecturers);
+                // end parse lecturers
+
+                // start parse sessions
                 let day = DAYS[row_idx / DAY_OFFSET];
                 let session_id = match self.get_session(row_idx as u32) {
                     Some(val) => val,
                     None => continue,
                 };
+                // end parse sessions
                 let data = Class {
                     matkul_id: subject_id,
                     lecturers_id,
