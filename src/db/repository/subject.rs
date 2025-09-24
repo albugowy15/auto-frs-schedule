@@ -14,8 +14,8 @@ impl<'a> Repository<'a> for SubjectRepository<'a> {
     }
 }
 
-impl SubjectRepository<'_> {
-    pub fn new(db_pool: &Pool<MySql>) -> SubjectRepository {
+impl<'a> SubjectRepository<'a> {
+    pub fn new(db_pool: &Pool<MySql>) -> SubjectRepository<'_> {
         SubjectRepository { db_pool }
     }
     pub async fn get_all_subjects(&self) -> Result<HashMap<String, String>, sqlx::Error> {
