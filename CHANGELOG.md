@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1](https://github.com/albugowy15/auto-frs-schedule/compare/v2.10.0...v2.10.1) (2025-09-24)
+
+
+### Bug Fixes
+
+* inconsistent life time ([2056af1](https://github.com/albugowy15/auto-frs-schedule/commit/2056af1e4e1ecbd9f246d579bdb5fe62c093ddd9))
+
 ## [2.10.0](https://github.com/albugowy15/auto-frs-schedule/compare/v2.9.0...v2.10.0) (2024-08-13)
 
 
